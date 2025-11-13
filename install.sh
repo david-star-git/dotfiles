@@ -42,7 +42,6 @@ read -rp "Install security systems? [Y/n] " install_security
 read -rp "Install zsh shell? [Y/n] " install_zsh
 read -rp "Install i3 window manager? [Y/n] " install_i3
 read -rp "Install neovim text editor? [Y/n] " install_neovim
-read -rp "Install tmux terminal multiplexer? [Y/n] " install_tmux
 echo
 
 # Normalize answers (empty → yes)
@@ -172,7 +171,7 @@ EOF
 setup_zsh() {
     # --- Package Installation ---
     # Installs Zsh, helpful Zsh plugins, and utilities used in the Zsh config.
-    install_pkg zsh zsh-syntax-highlighting zsh-autosuggestions zsh-completions zsh-history-substring-search neovim eza coreutils gawk sed procps-ng fzf bat ripgrep
+    install_pkg zsh zsh-syntax-highlighting zsh-autosuggestions zsh-completions zsh-history-substring-search neovim eza coreutils gawk sed procps-ng fzf bat ripgrep tmux fastfetch alacritty
 
     # --- Link Dotfiles ---
     # Symlink the main Zsh configuration to the user's home directory.
@@ -181,6 +180,26 @@ setup_zsh() {
     # Symlink the scripts folder to the user's home.
     # Provides easy access to custom scripts via ~/.scripts.
     link "$SCRIPT_DIR/config/zsh/.scripts" "$ORIGINAL_HOME/.scripts"
+
+    link "$SCRIPT_DIR/config/tmux" "$ORIGINAL_HOME/.config/tmux"
+    link "$SCRIPT_DIR/config/alacritty" "$ORIGINAL_HOME/.config/alacritty"
+    link "$SCRIPT_DIR/config/fastfetch" "$ORIGINAL_HOME/.config/fastfetch"
+}
+
+install_i3() {
+    # --- Package Installation ---
+    # Installs i3, a tiling window manager.
+    install_pkg i3 kvantum
+
+    # --- Link Dotfiles ---
+    # Symlink the main i3 configuration to the user's home directory.
+
+
+    # Symlink Kvantum and GTK themes to the user's home.
+    link "$SCRIPT_DIR/config/theme/Kvantum" "$ORIGINAL_HOME/.config/Kvantum"
+    link "$SCRIPT_DIR/config/theme/gtk-3.0" "$ORIGINAL_HOME/.config/gtk-3.0"
+    link "$SCRIPT_DIR/config/theme/gtk-4.0" "$ORIGINAL_HOME/.config/gtk-4.0"
+    link "$SCRIPT_DIR/config/theme/.themes" "$ORIGINAL_HOME/.themes"
 }
 
 # =====================================
