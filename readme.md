@@ -11,38 +11,38 @@
 ## Tmux
 
 - `C-a` - > prefix
-- `<prefix>r` -> reload config
-- `<prefix>g` -> lazygit
-- `<prefix>e` -> ranger
-- `<prefix>Enter` -> popup terminal
+- `<prefix>r` - > reload config
+- `<prefix>g` - > lazygit
+- `<prefix>e` - > ranger
+- `<prefix>Enter` - > popup terminal
 
 ### Movement
 
-- `<prefix>j` -> left
-- `<prefix>k` -> up
-- `<prefix>l` -> down
-- `<prefix>ö` -> right
+- `<prefix>j` - > left
+- `<prefix>k` - > up
+- `<prefix>l` - > down
+- `<prefix>ö` - > right
 
 ### pane
 
-- `<prefix>h` -> horizontal
-- `<prefix>v` -> vertical
-- `<prefix>q` -> kill pane
+- `<prefix>h` - > horizontal
+- `<prefix>v` - > vertical
+- `<prefix>q` - > kill pane
 
 ### window
 
-- `<prefix>c` -> create
+- `<prefix>c` - > create
 
 ## Nvim
 
 ## Remap
 
 - `gg` - > Beginning of Line
-- `hh` -> End of Line
-- `j` -> left
-- `k` -> up
-- `l` -> down
-- `ö` -> right
+- `hh` - > End of Line
+- `j` - > left
+- `k` - > up
+- `l` - > down
+- `ö` - > right
 
 ## Telescope
 
@@ -53,7 +53,7 @@
 ## etc
 
 - `C-f` - > Indent Function
-- `<leader>e` -> Explorer
+- `<leader>e` - > Explorer
 
 ## commands
 
