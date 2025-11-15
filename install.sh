@@ -189,10 +189,16 @@ setup_zsh() {
 install_i3() {
     # --- Package Installation ---
     # Installs i3, a tiling window manager.
-    install_pkg i3 kvantum
+    install_pkg i3 kvantum dolphin picom polybar rofi librewolf dex xss-lock i3lock xorg-xrandr feh mpd dunst mate-polkit psmisc xorg-xset dmenu
 
     # --- Link Dotfiles ---
     # Symlink the main i3 configuration to the user's home directory.
+    link "$SCRIPT_DIR/config/.xinitrc" "$ORIGINAL_HOME/.xinitrc"
+    link "$SCRIPT_DIR/config/i3" "$ORIGINAL_HOME/.config/i3"
+    link "$SCRIPT_DIR/config/polybar" "$ORIGINAL_HOME/.config/polybar"
+    link "$SCRIPT_DIR/config/picom" "$ORIGINAL_HOME/.config/picom"
+    link "$SCRIPT_DIR/config/rofi" "$ORIGINAL_HOME/.config/rofi"
+    link "$SCRIPT_FIR/local/bin" "$ORIGINAL_HOME/.local/bin"
 }
 
 install_theme() {
