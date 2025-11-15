@@ -10,56 +10,56 @@
 
 ## Tmux
 
-`C-a` - > prefix
-`<prefix>r` -> reload config
-`<prefix>g` -> lazygit
-`<prefix>e` -> ranger
-`<prefix>Enter` -> popup terminal
+- `C-a` - > prefix
+- `<prefix>r` -> reload config
+- `<prefix>g` -> lazygit
+- `<prefix>e` -> ranger
+- `<prefix>Enter` -> popup terminal
 
 ### Movement
 
-`<prefix>j` -> left
-`<prefix>k` -> up
-`<prefix>l` -> down
-`<prefix>ö` -> right
+- `<prefix>j` -> left
+- `<prefix>k` -> up
+- `<prefix>l` -> down
+- `<prefix>ö` -> right
 
 ### pane
 
-`<prefix>h` -> horizontal
-`<prefix>v` -> vertical
-`<prefix>q` -> kill pane
+- `<prefix>h` -> horizontal
+- `<prefix>v` -> vertical
+- `<prefix>q` -> kill pane
 
 ### window
 
-`<prefix>c` -> create
+- `<prefix>c` -> create
 
 ## Nvim
 
 ## Remap
 
-`gg` - > Beginning of Line
-`hh` -> End of Line
+- `gg` - > Beginning of Line
+- `hh` -> End of Line
 
-`j` -> left
-`k` -> up
-`l` -> down
-`ö` -> right
+- `j` -> left
+- `k` -> up
+- `l` -> down
+- `ö` -> right
 
 ## Telescope
 
-`<leader> ` - > Find Files
-`<leader>g` - > Find Files in Git
-`<leader>f` - > Find Files Grep
+- `<leader> ` - > Find Files
+- `<leader>g` - > Find Files in Git
+- `<leader>f` - > Find Files Grep
 
 ## etc
 
-`C-f` - > Indent Function
-`<leader>e` -> Explorer
+- `C-f` - > Indent Function
+- `<leader>e` -> Explorer
 
 ## commands
 
-`:so` - > source file
-`:PackerSync`
+- `:so` - > source file
+- `:PackerSync`
 
 # Post Install
 
