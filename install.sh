@@ -171,7 +171,7 @@ setup_security() {
 setup_zsh() {
     # --- Package Installation ---
     # Installs Zsh, helpful Zsh plugins, and utilities used in the Zsh config.
-    install_pkg zsh zsh-syntax-highlighting zsh-autosuggestions zsh-completions zsh-history-substring-search neovim eza coreutils gawk sed procps-ng fzf bat ripgrep tmux fastfetch alacritty wl-clipboard xclip
+    install_pkg zsh zsh-syntax-highlighting zsh-autosuggestions zsh-completions zsh-history-substring-search neovim eza coreutils gawk sed procps-ng fzf bat ripgrep tmux fastfetch alacritty wl-clipboard xclip lazygit
 
     # --- Link Dotfiles ---
     # Symlink the main Zsh configuration to the user's home directory.

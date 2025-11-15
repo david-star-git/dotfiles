@@ -11,6 +11,9 @@ dynamic_title = false
 padding = { x = 3, y = 3 }
 dynamic_padding = true
 
+[env]
+term = "xterm-256color"
+
 [font]
 # normal = { family = "JetBrains Mono Nerd Font" }
 normal = { family = "Monolisa" }
@@ -81,7 +84,7 @@ color = "#fab387"
 index = 17
 color = "#f5e0dc"
 
-# [terminal.shell]
-# program = "/usr/bin/tmux"
-# args = ["new-session", "-A", "-s", "main", ";", "source-file", "~/.tmux-main.conf"]
+[terminal.shell]
+program = "/usr/bin/tmux"
+args = ["new-session", "-A", "-s", "main"]
 

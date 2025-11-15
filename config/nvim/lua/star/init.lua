@@ -1,4 +1,5 @@
 require("star.remap")
+vim.o.termguicolors = true
 
 -- Clipboard
 vim.opt.clipboard = "unnamedplus"
@@ -47,4 +48,11 @@ vim.keymap.set("n", "<C-f>", function()
         vim.cmd("normal gg=G")
     end
 end, { noremap = true, silent = true })
+
+vim.cmd[[hi Normal guibg=NONE ctermbg=NONE]]
+vim.cmd[[hi NormalNC guibg=NONE ctermbg=NONE]]
+vim.cmd [[hi NvimTreeNormal guibg=NONE]]
+vim.cmd [[hi NvimTreeEndOfBuffer guibg=NONE]]
+vim.cmd [[hi LualineNormal guibg=NONE]]
+vim.cmd [[hi LualineInactive guibg=NONE]]
 

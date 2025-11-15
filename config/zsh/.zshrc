@@ -105,7 +105,8 @@ add-zsh-hook precmd setprompt
 #######################################################
 export GTK_THEME=catppuccin-mocha-sapphire
 alias ls='exa -l'
-alias nano='vim'
+alias nano='nvim'
+alias vim='nvim'
 
 SCRIPT_DIR="$HOME/.scripts"
 for script in "$SCRIPT_DIR"/*.sh; do

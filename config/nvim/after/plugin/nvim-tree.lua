@@ -14,6 +14,18 @@ require("nvim-tree").setup {
   view = {
     width = 30,
     side = "left",
+    float = {
+      enable = true,
+      quit_on_focus_loss = true,
+      open_win_config = {
+        relative = "editor",
+        border = "rounded",       -- options: "single", "double", "rounded", "shadow", "none"
+        width = 80,
+        height = 40,
+        row = math.floor((vim.o.lines - 40) / 2),   -- center vertically
+        col = math.floor((vim.o.columns - 80) / 2) -- center horizontally
+      },
+    },
     mappings = {
       list = {
         { key = {"<CR>", "o"}, action = "edit" },
@@ -50,4 +62,6 @@ require("nvim-tree").setup {
 
 -- Keymap to toggle nvim-tree
 vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { noremap = true, silent = true })
+vim.api.nvim_set_hl(0, "VertSplit", { fg = "NONE", bg = "NONE" })
+
 
