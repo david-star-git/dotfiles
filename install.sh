@@ -41,7 +41,7 @@ echo "=== Setup Options ==="
 read -rp "Install security systems? [Y/n] " install_security
 read -rp "Install zsh shell? [Y/n] " install_zsh
 read -rp "Install i3 window manager? [Y/n] " install_i3
-read -rp "Install neovim text editor? [Y/n] " install_neovim
+read -rp "Install theme? [Y/n] " install_theme
 echo
 
 # Normalize answers (empty → yes)
@@ -179,11 +179,11 @@ setup_zsh() {
 
     # Symlink the scripts folder to the user's home.
     # Provides easy access to custom scripts via ~/.scripts.
-    link "$SCRIPT_DIR/config/zsh/.scripts/" "$ORIGINAL_HOME/.scripts/"
+    link "$SCRIPT_DIR/config/zsh/.scripts" "$ORIGINAL_HOME/.scripts"
 
-    link "$SCRIPT_DIR/config/nvim/" "$ORIGINAL_HOME/.config/nvim/"
-    link "$SCRIPT_DIR/config/alacritty/" "$ORIGINAL_HOME/.config/alacritty/"
-    link "$SCRIPT_DIR/config/fastfetch/" "$ORIGINAL_HOME/.config/fastfetch/"
+    link "$SCRIPT_DIR/config/nvim" "$ORIGINAL_HOME/.config/nvim"
+    link "$SCRIPT_DIR/config/alacritty" "$ORIGINAL_HOME/.config/alacritty"
+    link "$SCRIPT_DIR/config/fastfetch" "$ORIGINAL_HOME/.config/fastfetch"
 }
 
 install_i3() {
@@ -200,10 +200,10 @@ install_theme() {
     install_pkg kvantum
 
     # Symlink Kvantum and GTK themes to the user's home.
-    link "$SCRIPT_DIR/config/theme/Kvantum/" "$ORIGINAL_HOME/.config/Kvantum/"
-    link "$SCRIPT_DIR/config/theme/gtk-3.0/" "$ORIGINAL_HOME/.config/gtk-3.0/"
-    link "$SCRIPT_DIR/config/theme/gtk-4.0/" "$ORIGINAL_HOME/.config/gtk-4.0/"
-    link "$SCRIPT_DIR/config/theme/.themes/" "$ORIGINAL_HOME/.themes/"
+    link "$SCRIPT_DIR/config/theme/Kvantum" "$ORIGINAL_HOME/.config/Kvantum"
+    link "$SCRIPT_DIR/config/theme/gtk-3.0" "$ORIGINAL_HOME/.config/gtk-3.0"
+    link "$SCRIPT_DIR/config/theme/gtk-4.0" "$ORIGINAL_HOME/.config/gtk-4.0"
+    link "$SCRIPT_DIR/config/theme/.themes" "$ORIGINAL_HOME/.themes"
 }
 
 # =====================================
@@ -212,3 +212,5 @@ install_theme() {
 
 if normalize "$install_security"; then setup_security; fi
 if normalize "$install_zsh"; then setup_zsh; fi
+if normalize "$install_i3"; then install_i3; fi
+if normalize "$install_theme"; then install_theme; fi
