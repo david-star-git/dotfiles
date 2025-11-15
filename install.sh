@@ -204,6 +204,7 @@ install_theme() {
     link "$SCRIPT_DIR/config/theme/gtk-3.0" "$ORIGINAL_HOME/.config/gtk-3.0"
     link "$SCRIPT_DIR/config/theme/gtk-4.0" "$ORIGINAL_HOME/.config/gtk-4.0"
     link "$SCRIPT_DIR/config/theme/.themes" "$ORIGINAL_HOME/.themes"
+    link "$SCRIPT_DIR/fonts" "$ORIGINAL_HOME/.fonts"
 }
 
 # =====================================
