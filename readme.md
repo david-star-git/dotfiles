@@ -70,6 +70,6 @@
 
 1. Generate Key: `ssh-keygen -t ed25519 -C "your_email@example.com"`
 2. Copy the public key: `cat ~/.ssh/id_ed25519.pub`
-3. Add the public key to github: `Settings → SSH and GPG keys → New SSH key`
+3. Add the public key to github: `Settings -> SSH and GPG keys -> New SSH key`
 4. Test it: `ssh -T git@github.com`
 5. If cloned via http set origin to use ssh: `git remote set-url origin git@github.com:david-star-git/dotfiles.git`
