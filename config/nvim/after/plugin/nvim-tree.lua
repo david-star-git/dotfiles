@@ -9,7 +9,6 @@ require("nvim-web-devicons").setup {
 require("nvim-tree").setup {
   disable_netrw = true,
   hijack_netrw = true,
-  open_on_setup = false,
   update_cwd = true,
   view = {
     width = 30,
@@ -26,17 +25,6 @@ require("nvim-tree").setup {
         col = math.floor((vim.o.columns - 80) / 2) -- center horizontally
       },
     },
-    mappings = {
-      list = {
-        { key = {"<CR>", "o"}, action = "edit" },
-        { key = "v", action = "vsplit" },
-        { key = "h", action = "split" },
-        { key = "r", action = "refresh" },
-        { key = "a", action = "create" },
-        { key = "d", action = "remove" },
-        { key = "R", action = "rename" },
-      }
-    }
   },
   renderer = {
     highlight_git = true,
