@@ -39,7 +39,6 @@
 
 - `gg` - > Beginning of Line
 - `hh` -> End of Line
-
 - `j` -> left
 - `k` -> up
 - `l` -> down
