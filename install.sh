@@ -154,7 +154,7 @@ setup_security() {
     kernel.randomize_va_space = 2
     fs.protected_hardlinks = 1
     fs.protected_symlinks = 1
-    EOF
+EOF
 
     # Apply sysctl changes immediately
     sudo sysctl --system
@@ -164,7 +164,7 @@ setup_security() {
     sudo tee /etc/tor/torrc > /dev/null <<'EOF'
     SocksPort 9050
     SocksListenAddress 127.0.0.1
-    EOF
+EOF
 }
 
 setup_zsh() {
