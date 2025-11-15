@@ -127,7 +127,6 @@ setup_security() {
     sudo systemctl enable apparmor --now
     sudo systemctl enable dnscrypt-proxy --now
     sudo systemctl enable clamav-freshclam --now
-    sudo systemctl enable clamav-daemon --now
 
     # --- Disable Unused / Risky Services ---
     # Minimizes the attack surface by stopping unneeded daemons.
@@ -198,7 +197,7 @@ install_i3() {
     link "$SCRIPT_DIR/config/polybar" "$ORIGINAL_HOME/.config/polybar"
     link "$SCRIPT_DIR/config/picom" "$ORIGINAL_HOME/.config/picom"
     link "$SCRIPT_DIR/config/rofi" "$ORIGINAL_HOME/.config/rofi"
-    link "$SCRIPT_FIR/local/bin" "$ORIGINAL_HOME/.local/bin"
+    link "$SCRIPT_DIR/local/bin" "$ORIGINAL_HOME/.local/bin"
 }
 
 install_theme() {
