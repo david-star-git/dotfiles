@@ -1,8 +1,8 @@
 #######################################################
 # Editor settings
 #######################################################
-export EDITOR=vim
-export VISUAL=vim
+export EDITOR=nvim
+export VISUAL=nvim
 
 # Colors for ls and grep
 export CLICOLOR=1
