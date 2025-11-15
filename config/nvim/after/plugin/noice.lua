@@ -37,29 +37,29 @@ require("noice").setup({
     -- Icons for completion item kinds (see defaults at noice.config.icons.kinds)
     kind_icons = {}, -- set to `false` to disable icons
   },
-      last = {
-      view = "popup",
-      opts = { enter = true, format = "details" },
-      filter = {
-        any = {
-          { event = "notify" },
-          { error = true },
-          { warning = true },
-          { event = "msg_show", kind = { "" } },
-          { event = "lsp", kind = "message" },
-        },
+  last = {
+    view = "popup",
+    opts = { enter = true, format = "details" },
+    filter = {
+      any = {
+        { event = "notify" },
+        { error = true },
+        { warning = true },
+        { event = "msg_show", kind = { "" } },
+        { event = "lsp", kind = "message" },
       },
-      filter_opts = { count = 1 },
     },
-    -- :Noice errors
-    errors = {
-      -- options for the message history that you get with `:Noice`
-      view = "popup",
-      opts = { enter = true, format = "details" },
-      filter = { error = true },
-      filter_opts = { reverse = true },
-    },
-      lsp = {
+    filter_opts = { count = 1 },
+  },
+  -- :Noice errors
+  errors = {
+    -- options for the message history that you get with `:Noice`
+    view = "popup",
+    opts = { enter = true, format = "details" },
+    filter = { error = true },
+    filter_opts = { reverse = true },
+  },
+  lsp = {
     progress = {
       enabled = true,
       -- Lsp Progress is formatted using the builtins for lsp_progress. See config.format.builtin
