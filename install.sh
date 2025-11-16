@@ -125,6 +125,9 @@ setup_zsh() {
     link "$SCRIPT_DIR/config/nvim" "$ORIGINAL_HOME/.config/nvim"
     link "$SCRIPT_DIR/config/alacritty" "$ORIGINAL_HOME/.config/alacritty"
     link "$SCRIPT_DIR/config/fastfetch" "$ORIGINAL_HOME/.config/fastfetch"
+
+    link "$SCRIPT_DIR/config/tmux" "$ORIGINAL_HOME/.config/tmux"
+    link "$SCRIPT_DIR/config/tmux-tpm" "$ORIGINAL_HOME/.tmux"
 }
 
 install_i3() {
