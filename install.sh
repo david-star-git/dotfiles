@@ -123,11 +123,13 @@ setup_zsh() {
     link "$SCRIPT_DIR/config/zsh/.scripts" "$ORIGINAL_HOME/.scripts"
 
     link "$SCRIPT_DIR/config/nvim" "$ORIGINAL_HOME/.config/nvim"
+    git clone --depth 1 https://github.com/wbthomason/packer.nvim ~/.config/nvim/site/pack/packer/start/packer.nvim
+
     link "$SCRIPT_DIR/config/alacritty" "$ORIGINAL_HOME/.config/alacritty"
     link "$SCRIPT_DIR/config/fastfetch" "$ORIGINAL_HOME/.config/fastfetch"
 
     link "$SCRIPT_DIR/config/tmux" "$ORIGINAL_HOME/.config/tmux"
-    link "$SCRIPT_DIR/config/tmux-tpm" "$ORIGINAL_HOME/.tmux"
+    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 }
 
 install_i3() {
