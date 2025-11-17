@@ -60,9 +60,10 @@
 
 ## LSP
 
-- `<Tab>` - > Cycle next
-- `<S-Tab>` - > Cycle prev
-- `<C-Space>` - > Accept
+- `<M-n>` - > Cycle next
+- `<M-p>` - > Cycle prev
+- `<M-y>` - > Accept
+- `<M-Space>` - > Accept Top
 
 ## etc
 

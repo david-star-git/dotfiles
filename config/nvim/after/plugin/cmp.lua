@@ -2,10 +2,10 @@ local cmp = require("cmp")
 
 cmp.setup({
   mapping = {
-    ["<Tab>"]     = cmp.mapping.select_next_item(),
-    ["<S-Tab>"]   = cmp.mapping.select_prev_item(),
-    ["<C-Space>"] = cmp.mapping.complete(),
-    ["<C-Tab>"]   = cmp.mapping.confirm({ select = true }),
+    ["<M-n>"]     = cmp.mapping.select_next_item(),
+    ["<M-p>"]   = cmp.mapping.select_prev_item(),
+    ["<M-y>"] = cmp.mapping.complete(),
+    ["<M-Space>"]   = cmp.mapping.confirm({ select = true }),
   },
   sources = {
     { name = "nvim_lsp" },
