@@ -39,11 +39,26 @@ return require('packer').startup(function(use)
     'nvim-tree/nvim-tree.lua',
     requires = 'nvim-tree/nvim-web-devicons',
   }
+
   use {
     'christoomey/vim-tmux-navigator'
   }
+
   use {
     'vim-test/vim-test',
     requires = 'preservim/vimux'
   }
+
+  use {
+  'williamboman/mason.nvim',
+  'williamboman/mason-lspconfig.nvim',
+  'neovim/nvim-lspconfig',
+  }
+
+  use 'hrsh7th/nvim-cmp'
+  use 'hrsh7th/cmp-nvim-lsp'
+  use 'hrsh7th/cmp-buffer'
+  use 'hrsh7th/cmp-path'
+
+  use 'windwp/nvim-autopairs'
 end)

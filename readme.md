@@ -58,6 +58,12 @@
 - `<leader>L` -> Test Last
 - `<leader>g` -> Test Visit
 
+## LSP
+
+- `<Tab>` - > Cycle next
+- `<S-Tab>` - > Cycle prev
+- `<C-Space>` - > Accept
+
 ## etc
 
 - `C-f` - > Indent Function
