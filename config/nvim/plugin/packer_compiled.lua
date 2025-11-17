@@ -94,6 +94,11 @@ _G.packer_plugins = {
     path = "/home/david/.local/share/nvim/site/pack/packer/start/cmp-path",
     url = "https://github.com/hrsh7th/cmp-path"
   },
+  ["indent-blankline.nvim"] = {
+    loaded = true,
+    path = "/home/david/.local/share/nvim/site/pack/packer/start/indent-blankline.nvim",
+    url = "https://github.com/lukas-reineke/indent-blankline.nvim"
+  },
   ["lualine.nvim"] = {
     loaded = true,
     path = "/home/david/.local/share/nvim/site/pack/packer/start/lualine.nvim",
@@ -148,6 +153,11 @@ _G.packer_plugins = {
     loaded = true,
     path = "/home/david/.local/share/nvim/site/pack/packer/start/nvim-treesitter",
     url = "https://github.com/nvim-treesitter/nvim-treesitter"
+  },
+  ["nvim-ts-autotag"] = {
+    loaded = true,
+    path = "/home/david/.local/share/nvim/site/pack/packer/start/nvim-ts-autotag",
+    url = "https://github.com/windwp/nvim-ts-autotag"
   },
   ["nvim-web-devicons"] = {
     loaded = true,
