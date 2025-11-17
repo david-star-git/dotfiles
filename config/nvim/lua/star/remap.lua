@@ -29,3 +29,8 @@ vim.keymap.set("o", "hh", "$")
 -- prevents deleted text from replacing clipboard
 vim.keymap.set("n", "dd", '"_dd')
 
+-- vim/tmux
+vim.keymap.set('n', 'M-j', ':wincmd h<CR>')
+vim.keymap.set('n', 'M-k', ':wincmd k<CR>')
+vim.keymap.set('n', 'M-l', ':wincmd j<CR>')
+vim.keymap.set('n', 'M-ö', ':wincmd l<CR>')
