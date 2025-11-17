@@ -35,7 +35,7 @@ bindsym XF86TouchpadToggle exec --no-startup-id touchpad_toggle
 bindsym Pause exec screenshot -sa
 bindsym Print exec screenshot -sf
 
-bindsym $mod+Return exec i3-sensible-terminal
+bindsym $mod+Return exec alacritty
 
 # kill focused window
 bindsym $mod+q kill
@@ -254,8 +254,8 @@ mode "$mode_gaps_outer" {
 ### Windows ###
 
 #for_window [class="Qalculate-gtk"] floating enable, move position center, resize set 400 600
-for_window [class="Qalculate-gtk"] floating enable, sticky enable
+#for_window [class="Qalculate-gtk"] floating enable, sticky enable
 
-for_window [class="Firefox Beta" title="Picture-in-Picture"] floating enable, sticky enable
-for_window [class="firefox-developer-edition" title="Picture-in-Picture"] floating enable, sticky enable
-for_window [class="Firefox" title="Picture-in-Picture"] floating enable, sticky enable
+#for_window [class="Firefox Beta" title="Picture-in-Picture"] floating enable, sticky enable
+#for_window [class="firefox-developer-edition" title="Picture-in-Picture"] floating enable, sticky enable
+#for_window [class="Firefox" title="Picture-in-Picture"] floating enable, sticky enable
