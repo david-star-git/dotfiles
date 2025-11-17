@@ -50,6 +50,14 @@
 - `<leader>g` - > Find Files in Git
 - `<leader>f` - > Find Files Grep
 
+## Tests
+
+- `<leader>t` -> Test Nearest
+- `<leader>T` -> Test File
+- `<leader>a` -> Test Suite
+- `<leader>L` -> Test Last
+- `<leader>g` -> Test Visit
+
 ## etc
 
 - `C-f` - > Indent Function

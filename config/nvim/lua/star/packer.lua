@@ -23,9 +23,6 @@ return require('packer').startup(function(use)
     {run = ':TSUpdate'}
   )
 
-  use('mbbill/undotree')
-  use('tpope/vim-fugitive')
-
   use {
     'folke/noice.nvim',
     requires = { {'MunifTanjim/nui.nvim'}, {'rcarriga/nvim-notify'} }
@@ -44,5 +41,9 @@ return require('packer').startup(function(use)
   }
   use {
     'christoomey/vim-tmux-navigator'
+  }
+  use {
+    'vim-test/vim-test',
+    requires = 'preservim/vimux'
   }
 end)
