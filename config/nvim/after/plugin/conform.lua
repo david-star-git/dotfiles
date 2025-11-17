@@ -12,8 +12,11 @@ conform.setup({
 		java = { "clang_format" },
 		html = { "prettier" },
 		css = { "prettier" },
+		scss = { "prettier" },
+		less = { "prettier" },
 		javascript = { "prettier" },
 		typescript = { "prettier" },
+		lua = { "stylua" },
 	},
 })
 
