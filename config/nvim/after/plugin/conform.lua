@@ -1,7 +1,7 @@
 local conform = require("conform")
 
 conform.formatters.clang_format = {
-	append_args = { "-style=WebKit" },
+    append_args = { "-style=WebKit" },
 }
 
 conform.formatters.stylua = {
@@ -25,124 +25,79 @@ conform.formatters.prettier = {
     command = "prettier",
     args = function()
         return {
-            "--stdin-filepath",
-            "$FILENAME",
             "--tab-width",
             "4",
-            "--use-tabs",
-            "false",
+            "--stdin-filepath",
+            "$FILENAME",
         }
     end,
 }
 
--- Helper to indent
-local function indent(level)
-    return string.rep("    ", level)
-end
+local INDENT = "    "  -- 4 spaces
 
--- CSS Allman formatter
-conform.formatters.allman_css = {
-    inherit = false,
-    format = function(_, ctx)
-        local buf = ctx.buf or 0
-        -- Always fetch current lines
-        local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-        local out = {}
-        local level = 0
-
-        for _, line in ipairs(lines) do
-            local trimmed = line:match("^%s*(.-)%s*$")
-
-            -- Opening brace
-            if trimmed:match("{$") then
-                local before = trimmed:gsub("{%s*$", "")
-                if before ~= "" then
-                    table.insert(out, indent(level) .. before)
-                end
-                table.insert(out, indent(level) .. "{")
-                level = level + 1
-
-            -- Closing brace
-            elseif trimmed:match("^}") then
-                level = math.max(level - 1, 0)
-                table.insert(out, indent(level) .. "}")
-            else
-                table.insert(out, indent(level) .. trimmed)
-            end
-        end
-
-        -- Replace buffer content
-        vim.api.nvim_buf_set_lines(buf, 0, -1, false, out)
-
-        return out
-    end,
-}
-
-local INDENT = "    "
-
-local function format_allman_js(ctx)
-    local buf = ctx.buf or 0
-    local lines = ctx.lines or vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+-- Format Allman style + proper indent + space after closing braces
+local function allman_style(lines)
     local out = {}
     local level = 0
-
-    local function append(line)
-        table.insert(out, string.rep(INDENT, level) .. line)
-    end
 
     for _, line in ipairs(lines) do
         local trimmed = line:match("^%s*(.-)%s*$")
 
-        -- Split single-line blocks: "function() { stuff }"
-        if trimmed:match("{.-}") then
-            -- Capture before {
-            local before = trimmed:match("^(.-){")
-            local inside = trimmed:match("{(.-)}") or ""
-            if before and before:match("%S") then
-                append(before)
-            end
-            append("{")
-            level = level + 1
-            for stmt in inside:gmatch("[^;]+;?") do
-                local s = stmt:match("^%s*(.-)%s*$")
-                if s ~= "" then
-                    append(s)
-                end
-            end
-            level = level - 1
-            append("}")
-        -- Opening brace at end
-        elseif trimmed:match("{$") then
+        -- Opening brace at end of line
+        if trimmed:match("{$") then
             local before = trimmed:gsub("{%s*$", "")
-            if before ~= "" then
-                append(before)
-            end
-            append("{")
+            if before ~= "" then table.insert(out, INDENT:rep(level) .. before) end
+            table.insert(out, INDENT:rep(level) .. "{")
             level = level + 1
+
         -- Closing brace at start
         elseif trimmed:match("^}") then
             level = math.max(level - 1, 0)
-            append("}")
-        -- Else if / else with opening brace: "} else {"
-        elseif trimmed:match("^}%s*else") and trimmed:match("{%s*$") then
-            level = math.max(level - 1, 0)
-            local before = trimmed:gsub("{%s*$", "")
-            append(before)
-            append("{")
-            level = level + 1
+            table.insert(out, INDENT:rep(level) .. "}")
+            table.insert(out, "") -- blank line after closing brace
+
+        -- Normal content
         else
-            append(trimmed)
+            table.insert(out, INDENT:rep(level) .. trimmed)
         end
     end
 
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, out)
     return out
 end
 
--- Register JS/TS/JSX/TSX Allman formatter
-conform.formatters.allman_js = {
+conform.formatters.prettier_allman = {
     inherit = false,
-    format = format_allman_js,
+    format = function(_, ctx)
+        local bufnr = ctx.buf
+        if not bufnr then return {} end
+
+        local lines = ctx.lines or vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        local content = table.concat(lines, "\n")
+
+        -- Run Prettier
+        local prettier_cmd = {
+            "prettier",
+            "--tab-width", "2",
+            "--stdin-filepath", vim.api.nvim_buf_get_name(bufnr),
+        }
+
+        local handle = io.popen("echo " .. vim.fn.shellescape(content) .. " | " .. table.concat(prettier_cmd, " "))
+        if not handle then return lines end
+        local formatted = handle:read("*a")
+        handle:close()
+
+        -- Split into lines
+        local out = {}
+        for s in formatted:gmatch("[^\r\n]+") do
+            table.insert(out, s)
+        end
+
+        -- Apply Allman formatting
+        out = allman_style(out)
+
+        vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, out)
+        return out
+    end,
 }
 
 conform.setup({
@@ -152,13 +107,9 @@ conform.setup({
         cpp = { "clang_format" },
         java = { "clang_format" },
         html = { "prettier" },
-        css = { "allman_css" },
-        scss = { "allman_css" },
-        less = { "allman_css" },
-        javascript = { "allman_js" },
-        typescript = { "allman_js" },
-        javascriptreact = { "allman_js" },
-        typescriptreact = { "allman_js" },
+        css = { "prettier_allman" },
+        javascript = { "prettier" },
+        typescript = { "prettier" },
         lua = { "stylua" },
     },
 })
