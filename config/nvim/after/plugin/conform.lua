@@ -33,7 +33,7 @@ conform.formatters.prettier = {
     end,
 }
 
-local INDENT = "    "  -- 4 spaces
+local INDENT = "    " -- 4 spaces
 
 -- Format Allman style + proper indent + space after closing braces
 local function allman_style(lines)
@@ -46,7 +46,9 @@ local function allman_style(lines)
         -- Opening brace at end of line
         if trimmed:match("{$") then
             local before = trimmed:gsub("{%s*$", "")
-            if before ~= "" then table.insert(out, INDENT:rep(level) .. before) end
+            if before ~= "" then
+                table.insert(out, INDENT:rep(level) .. before)
+            end
             table.insert(out, INDENT:rep(level) .. "{")
             level = level + 1
 
@@ -65,11 +67,13 @@ local function allman_style(lines)
     return out
 end
 
-conform.formatters.prettier_allman = {
+conform.formatters.prettier_allman_css = {
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
+        if not bufnr then
+            return {}
+        end
 
         local lines = ctx.lines or vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
         local content = table.concat(lines, "\n")
@@ -77,12 +81,16 @@ conform.formatters.prettier_allman = {
         -- Run Prettier
         local prettier_cmd = {
             "prettier",
-            "--tab-width", "2",
-            "--stdin-filepath", vim.api.nvim_buf_get_name(bufnr),
+            "--tab-width",
+            "2",
+            "--stdin-filepath",
+            vim.api.nvim_buf_get_name(bufnr),
         }
 
         local handle = io.popen("echo " .. vim.fn.shellescape(content) .. " | " .. table.concat(prettier_cmd, " "))
-        if not handle then return lines end
+        if not handle then
+            return lines
+        end
         local formatted = handle:read("*a")
         handle:close()
 
@@ -107,7 +115,7 @@ conform.setup({
         cpp = { "clang_format" },
         java = { "clang_format" },
         html = { "prettier" },
-        css = { "prettier_allman" },
+        css = { "prettier_allman_css" },
         javascript = { "prettier" },
         typescript = { "prettier" },
         lua = { "stylua" },
