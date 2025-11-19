@@ -114,6 +114,7 @@ EOF
 }
 
 setup_zsh() {
+    mkdir -p "$ORIGINAL_HOME/.config"
     # --- Link Dotfiles ---
     # Symlink the main Zsh configuration to the user's home directory.
     link "$SCRIPT_DIR/config/zsh/.zshrc" "$ORIGINAL_HOME/.zshrc"
@@ -123,16 +124,19 @@ setup_zsh() {
     link "$SCRIPT_DIR/config/zsh/.scripts" "$ORIGINAL_HOME/.scripts"
 
     link "$SCRIPT_DIR/config/nvim" "$ORIGINAL_HOME/.config/nvim"
-    git clone --depth 1 https://github.com/wbthomason/packer.nvim ~/.config/nvim/site/pack/packer/start/packer.nvim
+    mkdir -p "$ORIGINAL_HOME/.config/nvim/site/pack/packer/start"
+    git clone --depth 1 https://github.com/wbthomason/packer.nvim "$ORIGINAL_HOME/.config/nvim/site/pack/packer/start/packer.nvim"
 
     link "$SCRIPT_DIR/config/alacritty" "$ORIGINAL_HOME/.config/alacritty"
     link "$SCRIPT_DIR/config/fastfetch" "$ORIGINAL_HOME/.config/fastfetch"
 
     link "$SCRIPT_DIR/config/tmux" "$ORIGINAL_HOME/.config/tmux"
-    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+    mkdir -p "$ORIGINAL_HOME/.tmux/plugins"
+    git clone https://github.com/tmux-plugins/tpm "$ORIGINAL_HOME/.tmux/plugins/tpm"
 }
 
 install_i3() {
+    mkdir -p "$ORIGINAL_HOME/.config"
     # --- Link Dotfiles ---
     # Symlink the main i3 configuration to the user's home directory.
     link "$SCRIPT_DIR/config/.xinitrc" "$ORIGINAL_HOME/.xinitrc"
@@ -147,6 +151,7 @@ install_i3() {
 }
 
 install_theme() {
+    mkdir -p "$ORIGINAL_HOME/.config"
     # Symlink Kvantum and GTK themes to the user's home.
     link "$SCRIPT_DIR/config/theme/Kvantum" "$ORIGINAL_HOME/.config/Kvantum"
     link "$SCRIPT_DIR/config/theme/gtk-3.0" "$ORIGINAL_HOME/.config/gtk-3.0"
