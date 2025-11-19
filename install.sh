@@ -135,6 +135,8 @@ setup_zsh() {
     link "$SCRIPT_DIR/config/tmux" "$ORIGINAL_HOME/.config/tmux"
     mkdir -p "$ORIGINAL_HOME/.tmux/plugins"
     git clone https://github.com/tmux-plugins/tpm "$ORIGINAL_HOME/.tmux/plugins/tpm"
+
+    chsh -s $(which zsh)
 }
 
 install_i3() {
