@@ -128,6 +128,7 @@ setup_zsh() {
     PACKER_DIR="$ORIGINAL_HOME/.local/share/nvim/site/pack/packer/start"
     mkdir -p "$PACKER_DIR"
     git clone https://github.com/wbthomason/packer.nvim "$PACKER_DIR/packer.nvim"
+    nvim --headless -c 'PackerSync' -c 'qa'
 
     link "$SCRIPT_DIR/config/alacritty" "$ORIGINAL_HOME/.config/alacritty"
     link "$SCRIPT_DIR/config/fastfetch" "$ORIGINAL_HOME/.config/fastfetch"
@@ -139,20 +140,20 @@ setup_zsh() {
     chsh -s $(which zsh)
 }
 
-install_i3() {
-    mkdir -p "$ORIGINAL_HOME/.config"
-    # --- Link Dotfiles ---
-    # Symlink the main i3 configuration to the user's home directory.
-    link "$SCRIPT_DIR/config/.xinitrc" "$ORIGINAL_HOME/.xinitrc"
-    link "$SCRIPT_DIR/config/i3" "$ORIGINAL_HOME/.config/i3"
-    link "$SCRIPT_DIR/config/polybar" "$ORIGINAL_HOME/.config/polybar"
-    link "$SCRIPT_DIR/config/picom" "$ORIGINAL_HOME/.config/picom"
-    link "$SCRIPT_DIR/config/rofi" "$ORIGINAL_HOME/.config/rofi"
-
-    mkdir -p "$ORIGINAL_HOME/.local/bin"
-    find "$SCRIPT_DIR/usr/local/bin" -type f -exec chmod +x {} \;
-    cp -ran "$SCRIPT_DIR/usr/local/bin/"* "$ORIGINAL_HOME/.local/bin"
-}
+# install_i3() {
+#    mkdir -p "$ORIGINAL_HOME/.config"
+#    # --- Link Dotfiles ---
+#    # Symlink the main i3 configuration to the user's home directory.
+#    link "$SCRIPT_DIR/config/.xinitrc" "$ORIGINAL_HOME/.xinitrc"
+#    link "$SCRIPT_DIR/config/i3" "$ORIGINAL_HOME/.config/i3"
+#    link "$SCRIPT_DIR/config/polybar" "$ORIGINAL_HOME/.config/polybar"
+#    link "$SCRIPT_DIR/config/picom" "$ORIGINAL_HOME/.config/picom"
+#    link "$SCRIPT_DIR/config/rofi" "$ORIGINAL_HOME/.config/rofi"
+#
+#    mkdir -p "$ORIGINAL_HOME/.local/bin"
+#    find "$SCRIPT_DIR/usr/local/bin" -type f -exec chmod +x {} \;
+#    cp -ran "$SCRIPT_DIR/usr/local/bin/"* "$ORIGINAL_HOME/.local/bin"
+#}
 
 install_theme() {
     mkdir -p "$ORIGINAL_HOME/.config"
@@ -174,5 +175,5 @@ yay -S --noconfirm librewolf-bin aide
 
 setup_security
 setup_zsh
-install_i3
+# install_i3
 install_theme
