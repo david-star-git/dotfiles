@@ -124,8 +124,10 @@ setup_zsh() {
     link "$SCRIPT_DIR/config/zsh/.scripts" "$ORIGINAL_HOME/.scripts"
 
     link "$SCRIPT_DIR/config/nvim" "$ORIGINAL_HOME/.config/nvim"
-    mkdir -p "$ORIGINAL_HOME/.config/nvim/site/pack/packer/start"
-    git clone --depth 1 https://github.com/wbthomason/packer.nvim "$ORIGINAL_HOME/.config/nvim/site/pack/packer/start/packer.nvim"
+    
+    PACKER_DIR="$ORIGINAL_HOME/.local/share/nvim/site/pack/packer/start"
+    mkdir -p "$PACKER_DIR"
+    git clone https://github.com/wbthomason/packer.nvim "$PACKER_DIR/packer.nvim"
 
     link "$SCRIPT_DIR/config/alacritty" "$ORIGINAL_HOME/.config/alacritty"
     link "$SCRIPT_DIR/config/fastfetch" "$ORIGINAL_HOME/.config/fastfetch"
