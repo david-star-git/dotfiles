@@ -172,7 +172,7 @@ install_theme() {
 # =====================================
 # Execute Tasks
 # =====================================
-sudo pacman -S --noconfirm i3-wm kvantum dolphin picom polybar rofi dex xss-lock i3lock xorg-xrandr feh mpd dunst mate-polkit psmisc xorg-xset dmenu zsh zsh-syntax-highlighting zsh-autosuggestions zsh-completions zsh-history-substring-search neovim eza coreutils gawk sed procps-ng fzf bat ripgrep tmux fastfetch alacritty wl-clipboard xclip lazygit ranger linux-hardened ufw tor torsocks
+sudo pacman -S --noconfirm i3-wm kvantum dolphin picom polybar rofi dex xss-lock i3lock xorg-xrandr feh mpd dunst mate-polkit psmisc xorg-xset dmenu zsh zsh-syntax-highlighting zsh-autosuggestions zsh-completions zsh-history-substring-search neovim eza coreutils gawk sed procps-ng fzf bat ripgrep tmux fastfetch alacritty wl-clipboard xclip lazygit ranger linux-hardened ufw tor torsocks npm
 
 ensure_yay
 yay -S --noconfirm librewolf-bin aide
