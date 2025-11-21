@@ -79,7 +79,24 @@
 
 ## Setup
 
+### shell
 
+```sh
+chsh
+```
+-> /usr/bin/zsh
+
+### nvim
+
+`:PackerSync`
+
+```sh
+:MasonInstall black clangd css-lsp html-lsp stylua prettier
+```
+
+### tmux
+
+`<prefix>r` `<prefix>I`
 
 ## SSH key
 
