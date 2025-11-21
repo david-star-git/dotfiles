@@ -64,8 +64,15 @@ setprompt() {
 
     PROMPT+=$'\n'
 
-    # Date/time
-    PROMPT+="%F{black}(%F{cyan}%D{%a} %D{%b-%-m} %F{blue}%D{%I:%M:%S%P}%F{black})-"
+    # User & host
+    if [[ -n "$SSH_CLIENT" ]]; then
+        PROMPT+="%F{black}(%F{red}%n@%m"
+    else
+        PROMPT+="%F{black}(%F{red}%n"
+    fi
+
+    # Directory
+    PROMPT+="%F{black}:%F{yellow}%1~%F{black})-"
 
     # CPU, jobs, net
     PROMPT+="(%F{magenta}CPU $(cpu)%%%F{black}:%F{magenta}%j"
@@ -74,19 +81,13 @@ setprompt() {
     fi
     PROMPT+="%F{black})-"
 
-    # User & host
-    if [[ -n "$SSH_CLIENT" ]]; then
-        PROMPT+="(%F{red}%n@%m"
-    else
-        PROMPT+="(%F{red}%n"
-    fi
+    # Date/time
+    PROMPT+="%F{black}(%F{cyan}%D{%a} %D{%b-%-m} %F{blue}%D{%I:%M:%S%P}%F{black})" #-"
 
-    # Directory
-    PROMPT+="%F{black}:%F{yellow}%1~%F{black})-"
 
     # Dir stats
-    PROMPT+="(%F{green}$(/bin/ls -lah 2>/dev/null | grep -m 1 total | sed 's/total //' || echo '0')%F{black}:"
-    PROMPT+="%F{green}$(/bin/ls -A -1 2>/dev/null | wc -l)%F{black})"
+    # PROMPT+="(%F{green}$(/bin/ls -lah 2>/dev/null | grep -m 1 total | sed 's/total //' || echo '0')%F{black}:"
+    # PROMPT+="%F{green}$(/bin/ls -A -1 2>/dev/null | wc -l)%F{black})"
 
     # New line & prompt symbol
     PROMPT+=$'\n'
