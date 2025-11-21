@@ -1,4 +1,6 @@
 require("star.remap")
+require("star.packer")
+
 vim.o.termguicolors = true
 
 -- Clipboard

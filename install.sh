@@ -113,29 +113,33 @@ SocksListenAddress 127.0.0.1
 EOF
 }
 
+
 setup_zsh() {
     mkdir -p "$ORIGINAL_HOME/.config"
-    # --- Link Dotfiles ---
-    # Symlink the main Zsh configuration to the user's home directory.
-    link "$SCRIPT_DIR/config/zsh/.zshrc" "$ORIGINAL_HOME/.zshrc"
 
-    # Symlink the scripts folder to the user's home.
-    # Provides easy access to custom scripts via ~/.scripts.
+    # Zsh
+    link "$SCRIPT_DIR/config/zsh/.zshrc" "$ORIGINAL_HOME/.zshrc"
     link "$SCRIPT_DIR/config/zsh/.scripts" "$ORIGINAL_HOME/.scripts"
 
-    link "$SCRIPT_DIR/config/nvim" "$ORIGINAL_HOME/.config/nvim"
-    
+    # --- PACKER ---
     PACKER_DIR="$ORIGINAL_HOME/.local/share/nvim/site/pack/packer/start"
     mkdir -p "$PACKER_DIR"
     git clone https://github.com/wbthomason/packer.nvim "$PACKER_DIR/packer.nvim"
+
+    # Link Neovim config BEFORE installing plugins
+    link "$SCRIPT_DIR/config/nvim" "$ORIGINAL_HOME/.config/nvim"
+
+    # Now run Packer
     nvim --headless -c 'PackerSync' -c 'qa'
 
+    # Other
     link "$SCRIPT_DIR/config/alacritty" "$ORIGINAL_HOME/.config/alacritty"
     link "$SCRIPT_DIR/config/fastfetch" "$ORIGINAL_HOME/.config/fastfetch"
 
-    link "$SCRIPT_DIR/config/tmux" "$ORIGINAL_HOME/.config/tmux"
+    # --- TPM ---
     mkdir -p "$ORIGINAL_HOME/.tmux/plugins"
     git clone https://github.com/tmux-plugins/tpm "$ORIGINAL_HOME/.tmux/plugins/tpm"
+    link "$SCRIPT_DIR/config/tmux" "$ORIGINAL_HOME/.config/tmux"
 
     chsh -s $(which zsh)
 }
