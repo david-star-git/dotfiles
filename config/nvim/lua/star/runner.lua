@@ -35,11 +35,6 @@ local function find_html_entry(cwd, file)
     return nil
 end
 
-local function kill_port(port)
-    -- Find PIDs listening on the port and kill them
-    os.execute("lsof -ti tcp:" .. port .. " | xargs -r kill -9 2>/dev/null")
-end
-
 -- =========================
 -- Keymap
 -- =========================
