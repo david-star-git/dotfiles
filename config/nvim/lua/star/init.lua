@@ -1,5 +1,6 @@
 require("star.remap")
 require("star.packer")
+require("star.runner")
 
 vim.o.termguicolors = true
 
@@ -52,18 +53,18 @@ vim.keymap.set("n", "<C-f>", function()
 end, { noremap = true, silent = true })
 
 vim.keymap.set("i", "<CR>", function()
-  local col = vim.fn.col(".")
-  local line = vim.fn.getline(".")
-  if col >= 2 and line:sub(col-1, col) == "{}" then
-    return "<CR><Esc>O"
-  else
-    return "<CR>"
-  end
+    local col = vim.fn.col(".")
+    local line = vim.fn.getline(".")
+    if col >= 2 and line:sub(col - 1, col) == "{}" then
+        return "<CR><Esc>O"
+    else
+        return "<CR>"
+    end
 end, { expr = true, noremap = true })
 
-vim.cmd [[hi Normal guibg=NONE ctermbg=NONE]]
-vim.cmd [[hi NormalNC guibg=NONE ctermbg=NONE]]
-vim.cmd [[hi NvimTreeNormal guibg=NONE]]
-vim.cmd [[hi NvimTreeEndOfBuffer guibg=NONE]]
-vim.cmd [[hi LualineNormal guibg=NONE]]
-vim.cmd [[hi LualineInactive guibg=NONE]]
+vim.cmd([[hi Normal guibg=NONE ctermbg=NONE]])
+vim.cmd([[hi NormalNC guibg=NONE ctermbg=NONE]])
+vim.cmd([[hi NvimTreeNormal guibg=NONE]])
+vim.cmd([[hi NvimTreeEndOfBuffer guibg=NONE]])
+vim.cmd([[hi LualineNormal guibg=NONE]])
+vim.cmd([[hi LualineInactive guibg=NONE]])

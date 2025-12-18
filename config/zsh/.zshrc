@@ -144,3 +144,7 @@ fi
 if [[ -d /usr/share/zsh/plugins/zsh-syntax-highlighting ]]; then
     source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
+
+##
+export PATH="$HOME/.pyenv/bin:$PATH"
+eval "$(pyenv init -)"
