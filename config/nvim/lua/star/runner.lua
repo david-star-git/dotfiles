@@ -12,8 +12,9 @@ notify = function(msg, level)
     vim.notify(msg, level or vim.log.levels.INFO, { title = "Runner" })
 end
 
-local function tmux(cmd)
-    os.execute("tmux new-window '" .. cmd .. "; exec " .. TMUX_SHELL .. " -i'")
+local function tmux(cmd, name)
+    name = name or "runner"
+    os.execute("tmux new-window -d -n " .. vim.fn.shellescape(name) .. " '" .. cmd .. "; exec " .. TMUX_SHELL .. " -i'")
 end
 
 local function find_html_entry(cwd, file)
@@ -58,7 +59,8 @@ local function run_static_server(cwd, page)
             .. page
             .. ") & "
             .. "python3 -m http.server "
-            .. HTML_PORT
+            .. HTML_PORT,
+        "html"
     )
 end
 
@@ -99,7 +101,8 @@ local function run_flask(cwd)
             .. venv
             .. "/bin/activate"
             .. " && export FLASK_DEBUG=1"
-            .. " && flask run --debug --reload"
+            .. " && flask run --debug --reload",
+        "flask"
     )
 end
 
@@ -122,27 +125,27 @@ vim.keymap.set("n", "<leader>r", function()
             os.execute("python3 -m venv " .. venv)
         end
         notify("Running Python file", vim.log.levels.INFO)
-        tmux("source " .. venv .. "/bin/activate && python3 " .. file)
+        tmux("source " .. venv .. "/bin/activate && python3 " .. file, "python")
     end
 
     runners.js = function()
         notify("Running JavaScript file", vim.log.levels.INFO)
-        tmux("node " .. file)
+        tmux("node " .. file, "node")
     end
 
     runners.lua = function()
         notify("Running Lua file", vim.log.levels.INFO)
-        tmux("lua " .. file)
+        tmux("lua " .. file, "lua")
     end
 
     runners.c = function()
         notify("Compiling & running C program", vim.log.levels.INFO)
-        tmux("gcc " .. file .. " -o " .. TMP_DIR .. "/a.out && " .. TMP_DIR .. "/a.out")
+        tmux("gcc " .. file .. " -o " .. TMP_DIR .. "/a.out && " .. TMP_DIR .. "/a.out", "c-run")
     end
 
     runners.cpp = function()
         notify("Compiling & running C++ program", vim.log.levels.INFO)
-        tmux("g++ " .. file .. " -std=c++20 -O2 -o " .. TMP_DIR .. "/a.out && " .. TMP_DIR .. "/a.out")
+        tmux("g++ " .. file .. " -std=c++20 -O2 -o " .. TMP_DIR .. "/a.out && " .. TMP_DIR .. "/a.out", "cpp-ru n")
     end
 
     runners.html = function()
@@ -163,7 +166,10 @@ vim.keymap.set("n", "<leader>r", function()
 
     runners.md = function()
         notify("Rendering Markdown preview", vim.log.levels.INFO)
-        tmux("pandoc " .. file .. " -o " .. TMP_DIR .. "/preview.html && xdg-open " .. TMP_DIR .. "/preview.html")
+        tmux(
+            "pandoc " .. file .. " -o " .. TMP_DIR .. "/preview.html && xdg-open " .. TMP_DIR .. "/preview.html",
+            "markdown"
+        )
     end
 
     local run = runners[ext]
