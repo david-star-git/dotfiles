@@ -1,24 +1,69 @@
--- The setup config table shows all available config options with their default values:
-require("presence").setup({
-    -- General options
-    auto_update         = true,                       -- Update activity based on autocmd events (if `false`, map or manually execute `:lua package.loaded.presence:update()`)
-    neovim_image_text   = "The One True Text Editor", -- Text displayed when hovered over the Neovim image
-    main_image          = "neovim",                   -- Main image display (either "neovim" or "file")
-    client_id           = "793271441293967371",       -- Use your own Discord application client id (not recommended)
-    log_level           = nil,                        -- Log messages at or above this level (one of the following: "debug", "info", "warn", "error")
-    debounce_timeout    = 10,                         -- Number of seconds to debounce events (or calls to `:lua package.loaded.presence:update(<filename>, true)`)
-    enable_line_number  = false,                      -- Displays the current line number instead of the current project
-    blacklist           = {},                         -- A list of strings or Lua patterns that disable Rich Presence if the current file name, path, or workspace matches
-    buttons             = true,                       -- Configure Rich Presence button(s), either a boolean to enable/disable, a static table (`{{ label = "<label>", url = "<url>" }, ...}`, or a function(buffer: string, repo_url: string|nil): table)
-    file_assets         = {},                         -- Custom file asset definitions keyed by file names and extensions (see default config at `lua/presence/file_assets.lua` for reference)
-    show_time           = true,                       -- Show the timer
+local hover_texts = {
+    "Yes, this is faster than your IDE",
+    "I know exactly what I’m doing (I don’t)",
+    "Works on my machine",
+    "Syntax errors are a lifestyle",
+    "Because GUIs are for cowards",
+    "nano users fear this",
+    "Arch btw",
+    "One more plugin will fix everything",
+    "Pressing keys until it works",
+    "This config took 6 hours",
+    "If it breaks, it breaks",
+    "I can quit anytime",
+    "Still learning how to exit",
+    "Rebinding my problems away",
+    "I swear this was simpler yesterday",
+    "Future me will hate this",
+}
 
-    -- Rich Presence text options
-    editing_text        = "Editing %s",               -- Format string rendered when an editable file is loaded in the buffer (either string or function(filename: string): string)
-    file_explorer_text  = "Browsing %s",              -- Format string rendered when browsing a file explorer (either string or function(file_explorer_name: string): string)
-    git_commit_text     = "Committing changes",       -- Format string rendered when committing changes in git (either string or function(filename: string): string)
-    plugin_manager_text = "Managing plugins",         -- Format string rendered when managing plugins (either string or function(plugin_manager_name: string): string)
-    reading_text        = "Reading %s",               -- Format string rendered when a read-only or unmodifiable file is loaded in the buffer (either string or function(filename: string): string)
-    workspace_text      = "Working on %s",            -- Format string rendered when in a git repository (either string or function(project_name: string|nil, filename: string): string)
-    line_number_text    = "Line %s out of %s",        -- Format string rendered when `enable_line_number` is set to true (either string or function(line_number: number, line_count: number): string)
+-- Seed randomness using time + PID to avoid repeats on fast restarts
+math.randomseed(os.time() + vim.fn.getpid())
+
+-- Pick today's flavor of chaos
+local neovim_hover = hover_texts[math.random(#hover_texts)]
+
+require("presence").setup({
+    auto_update = true,
+
+    -- Hover text when someone inspects the Neovim icon on Discord
+    neovim_image_text = neovim_hover,
+
+    -- Always show Neovim, not the file icon
+    main_image = "neovim",
+
+    -- Official Presence app ID
+    client_id = "793271441293967371",
+
+    -- Keep logs quiet unless something breaks
+    log_level = nil,
+
+    -- React quickly without spamming Discord
+    debounce_timeout = 1,
+
+    -- Show project name instead of line numbers
+    enable_line_number = false,
+
+    -- No shame, no blacklists
+    blacklist = {},
+
+    -- Buttons enabled (repo detection handled automatically)
+    buttons = true,
+
+    -- Default file icons are good enough
+    file_assets = {},
+
+    -- Show how long we’ve been “working”
+    show_time = true,
+
+    -- Activity text depending on context
+    editing_text = "Editing %s",
+    reading_text = "Reading %s",
+    workspace_text = "Working on %s",
+    file_explorer_text = "Browsing %s",
+    git_commit_text = "Committing changes",
+    plugin_manager_text = "Managing plugins",
+
+    -- Only used if line numbers are enabled
+    line_number_text = "Line %s out of %s",
 })
