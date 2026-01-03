@@ -15,6 +15,18 @@ local hover_texts = {
     "Rebinding my problems away",
     "I swear this was simpler yesterday",
     "Future me will hate this",
+    "Comments are for the weak",
+    "Compiles? Ship it!",
+    "Will optimize later… maybe",
+    "Keyboard shortcuts > social life",
+    "Merge conflicts are fun, right?",
+    "Error messages are suggestions",
+    "Compilers always be complaining",
+    "It works in theory",
+    "This will break in production",
+    "The comments is a lies",
+    "I'll fix this tomorrow",
+    "I SSH therefore I am",
 }
 
 -- Seed randomness using time + PID to avoid repeats on fast restarts
