@@ -1,24 +1,42 @@
+-- Treesitter setup
 require'nvim-treesitter.configs'.setup {
-  -- A list of parser names, or "all" (the listed parsers MUST always be installed)
-  ensure_installed = { "javascript", "html", "python", "css", "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "typescript", "tsx", "vue" },
+  ensure_installed = {
+    "javascript",
+    "html",
+    "python",
+    "css",
+    "c",
+    "lua",
+    "vim",
+    "vimdoc",
+    "query",
+    "markdown",
+    "markdown_inline",
+    "typescript",
+    "tsx",
+    "vue",
+    "htmldjango",
+  },
 
-  -- Install parsers synchronously (only applied to `ensure_installed`)
   sync_install = false,
-
-  -- Automatically install missing parsers when entering buffer
-  -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
   auto_install = true,
 
   highlight = {
     enable = true,
-
-    -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
-    -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
-    -- Using this option may slow down your editor, and you may see some duplicate highlights.
-    -- Instead of true it can also be a list of languages
-    additional_vim_regex_highlighting = false,
+    additional_vim_regex_highlighting = false,  -- don't mix with old regex syntax
   },
-
-  highlight = { enable = true },
-  autotag = { enable = true }
 }
+
+-- Autotag setup (new plugin)
+require('nvim-ts-autotag').setup({
+  enable = true,
+  filetypes = { "html", "xml", "javascriptreact", "typescriptreact", "htmldjango" },
+})
+
+-- Optional: Force Jinja syntax highlighting for htmldjango
+vim.cmd [[
+  highlight link htmlTagName Identifier
+  highlight link htmlTagDelimiter Statement
+  highlight link htmlSpecialChar Keyword
+]]
+
