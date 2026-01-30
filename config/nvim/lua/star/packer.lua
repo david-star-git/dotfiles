@@ -75,4 +75,6 @@ return require("packer").startup(function(use)
 	})
 
     use 'andweeb/presence.nvim'
+
+    use 'brenoprata10/nvim-highlight-colors'
 end)
