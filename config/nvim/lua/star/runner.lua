@@ -101,7 +101,7 @@ local function run_flask(cwd)
             .. venv
             .. "/bin/activate"
             .. " && export FLASK_DEBUG=1"
-            .. " && flask run --debug --reload",
+            .. " && flask run --debug --reload --host=0.0.0.0 --port=5000",
         "flask"
     )
 end
