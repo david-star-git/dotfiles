@@ -114,7 +114,7 @@ conform.setup({
         c = { "clang_format" },
         cpp = { "clang_format" },
         java = { "clang_format" },
-        html = { "prettier" },
+        html = { "djlint" },
         css = { "prettier_allman_css" },
         javascript = { "prettier" },
         typescript = { "prettier" },
