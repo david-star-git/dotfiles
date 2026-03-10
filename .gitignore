@@ -1,2 +1,3 @@
 config/tmux/plugins/*
 config/nvim/site/
+config/nvim/plugin/packer_compiled.lua
