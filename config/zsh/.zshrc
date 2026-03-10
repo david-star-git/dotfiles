@@ -109,6 +109,77 @@ alias ls='exa -l'
 alias nano='nvim'
 alias vim='nvim'
 
+hearthstone() {
+  cd ~/Documents/git/hearthstone-linux/hearthstone || return
+  ./Bin/Hearthstone.x86_64
+}
+
+record() {
+  local name="recording"
+  local fps="60"
+  local resolution="1920x1080"
+
+  # parse arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --name|-n)
+        name="$2"
+        shift 2
+        ;;
+      --fps|-f)
+        fps="$2"
+        shift 2
+        ;;
+      --resolution|-r)
+        resolution="$2"
+        shift 2
+        ;;
+      *)
+        # positional fallback
+        [[ "$name" == "recording" ]] && name="$1" \
+        || [[ "$fps" == "60" ]] && fps="$1" \
+        || [[ "$resolution" == "1920x1080" ]] && resolution="$1"
+        shift
+        ;;
+    esac
+  done
+
+  local dir="$HOME/Videos/ffmpeg"
+  mkdir -p "$dir"
+
+  local timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+
+  # active window
+  local win=$(xdotool getactivewindow)
+
+  # window coordinates
+  eval "$(xdotool getwindowgeometry --shell "$win")"
+
+  # detect monitor containing window
+  local monitor=$(xrandr --listmonitors | awk -v x="$X" -v y="$Y" '
+    NR>1 {
+      split($3,a,"+")
+      split(a[1],res,"x")
+      mx=a[2]; my=a[3]
+      mw=res[1]; mh=res[2]
+      if (x>=mx && x<mx+mw && y>=my && y<my+mh) {
+        print mx","my
+        exit
+      }
+    }')
+
+  [[ -z "$monitor" ]] && monitor="0,0"
+
+  ffmpeg \
+    -video_size "$resolution" \
+    -framerate "$fps" \
+    -f x11grab \
+    -i ":0.0+$monitor" \
+    -vaapi_device /dev/dri/renderD128 \
+    -vf 'format=nv12,hwupload' \
+    -c:v h264_vaapi \
+    "$dir/${timestamp}_${name}.mp4"
+}
 SCRIPT_DIR="$HOME/.scripts"
 for script in "$SCRIPT_DIR"/*.sh; do
     [[ -f "$script" ]] || continue
@@ -148,3 +219,4 @@ fi
 ##
 export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
+
