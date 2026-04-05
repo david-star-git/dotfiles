@@ -1,21 +1,17 @@
-#######################################################
-# Editor settings
-#######################################################
+
+# =============================================================================
+# ~/.zshrc
+# =============================================================================
+
+# ── Editor ────────────────────────────────────────────────────────────────────
 export EDITOR=nvim
 export VISUAL=nvim
 
-# Colors for ls and grep
+# ── Colors ────────────────────────────────────────────────────────────────────
 export CLICOLOR=1
 export LS_COLORS='no=00:fi=00:di=00;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:*.xml=00;31:'
 
-# Grep setup - prefer ripgrep if available
-if command -v rg &> /dev/null; then
-    alias grep='rg'
-else
-    alias grep="/usr/bin/grep --color=auto"
-fi
-
-# Color for manpages
+# Colored man pages
 export LESS_TERMCAP_mb=$'\E[01;31m'
 export LESS_TERMCAP_md=$'\E[01;31m'
 export LESS_TERMCAP_me=$'\E[0m'
@@ -24,73 +20,77 @@ export LESS_TERMCAP_so=$'\E[01;44;33m'
 export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[01;32m'
 
-#######################################################
-# CPU USAGE FUNCTION
-#######################################################
+# ── Aliases ───────────────────────────────────────────────────────────────────
+export GTK_THEME=catppuccin-mocha-sapphire
+alias ls='exa -l'
+alias nano='nvim'
+alias vim='nvim'
+
+# Prefer ripgrep over grep when available
+if command -v rg &>/dev/null; then
+    alias grep='rg'
+else
+    alias grep="/usr/bin/grep --color=auto"
+fi
+
+# ── Prompt ────────────────────────────────────────────────────────────────────
+# cpu() is defined here rather than in a script because the prompt calls it on
+# every command — sourcing or subshelling it each time would be too slow.
 cpu() {
-    grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}' | awk '{printf("%.1f\n", $1)}'
+    grep 'cpu ' /proc/stat \
+        | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}' \
+        | awk '{printf("%.1f\n", $1)}'
 }
 
-#######################################################
-# COLORS
-#######################################################
 autoload -Uz colors && colors
 setopt PROMPT_SUBST
 
-#######################################################
-# PROMPT FUNCTION
-#######################################################
 setprompt() {
     local LAST_COMMAND=$?
-
     PROMPT=""
 
-    # Error line
+    # Error line — only shown when the last command failed
     if [[ $LAST_COMMAND -ne 0 ]]; then
         PROMPT+="%F{black}(%F{red}ERROR%F{black})-(%F{red}Exit Code ${LAST_COMMAND}%F{black})-(%F{red}"
         case $LAST_COMMAND in
-            1) PROMPT+="General error" ;;
-            2) PROMPT+="Missing keyword, command, or permission problem" ;;
+            1)   PROMPT+="General error" ;;
+            2)   PROMPT+="Missing keyword, command, or permission problem" ;;
             126) PROMPT+="Permission denied / not executable" ;;
             127) PROMPT+="Command not found" ;;
             128) PROMPT+="Invalid argument to exit" ;;
             129) PROMPT+="Signal 1" ;;
             130) PROMPT+="Interrupted (Ctrl-C)" ;;
             137) PROMPT+="Killed (SIGKILL)" ;;
-            *) PROMPT+="Unknown error" ;;
+            *)   PROMPT+="Unknown error" ;;
         esac
         PROMPT+="%F{black})%f"$'\n'
     fi
 
     PROMPT+=$'\n'
 
-    # User & host
+    # User — show hostname when connected over SSH
     if [[ -n "$SSH_CLIENT" ]]; then
         PROMPT+="%F{black}(%F{red}%n@%m"
     else
         PROMPT+="%F{black}(%F{red}%n"
     fi
 
-    # Directory
+    # Current directory (one level deep)
     PROMPT+="%F{black}:%F{yellow}%1~%F{black})-"
 
-    # CPU, jobs, net
+    # CPU usage, background jobs, open TCP connections
     PROMPT+="(%F{magenta}CPU $(cpu)%%%F{black}:%F{magenta}%j"
     if [[ -r /proc/net/tcp ]]; then
         PROMPT+="%F{black}:%F{magenta}Net $(($(wc -l < /proc/net/tcp)-1))"
     fi
     PROMPT+="%F{black})-"
 
-    # Date/time
-    PROMPT+="%F{black}(%F{cyan}%D{%a} %D{%b-%-m} %F{blue}%D{%I:%M:%S%P}%F{black})" #-"
+    # Date and time
+    PROMPT+="%F{black}(%F{cyan}%D{%a} %D{%b-%-m} %F{blue}%D{%I:%M:%S%P}%F{black})"
 
-
-    # Dir stats
-    # PROMPT+="(%F{green}$(/bin/ls -lah 2>/dev/null | grep -m 1 total | sed 's/total //' || echo '0')%F{black}:"
-    # PROMPT+="%F{green}$(/bin/ls -A -1 2>/dev/null | wc -l)%F{black})"
-
-    # New line & prompt symbol
     PROMPT+=$'\n'
+
+    # Green > for user, red > for root
     if [[ $EUID -ne 0 ]]; then
         PROMPT+="%F{green}>%f "
     else
@@ -101,128 +101,63 @@ setprompt() {
 autoload -Uz add-zsh-hook
 add-zsh-hook precmd setprompt
 
-#######################################################
-# THEMES & ALIASES
-#######################################################
-export GTK_THEME=catppuccin-mocha-sapphire
-alias ls='exa -l'
-alias nano='nvim'
-alias vim='nvim'
+# ── Script autoloader ─────────────────────────────────────────────────────────
+# Three tiers of scripts, each loaded differently:
+#
+#   .scripts/*.sh        — standalone scripts, aliased by filename so typing
+#                          "record" runs bash ~/.scripts/record.sh
+#
+#   .scripts/shell/*.sh  — scripts that need the current shell environment
+#                          (e.g. they use cd). Sourced so changes persist.
+#
+#   .scripts/func/*.sh   — small helper functions, sourced so they become
+#                          shell functions callable without a subshell.
 
-hearthstone() {
-  cd ~/Documents/git/hearthstone-linux/hearthstone || return
-  ./Bin/Hearthstone.x86_64
-}
-
-post() {
-  for f in *.jpg; do
-    magick "$f" -strip -resize 2000x3000 "resized_$f"
-  done
-}
-
-record() {
-  local name="recording"
-  local fps="60"
-  local resolution="1920x1080"
-
-  # parse arguments
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --name|-n)
-        name="$2"
-        shift 2
-        ;;
-      --fps|-f)
-        fps="$2"
-        shift 2
-        ;;
-      --resolution|-r)
-        resolution="$2"
-        shift 2
-        ;;
-      *)
-        # positional fallback
-        [[ "$name" == "recording" ]] && name="$1" \
-        || [[ "$fps" == "60" ]] && fps="$1" \
-        || [[ "$resolution" == "1920x1080" ]] && resolution="$1"
-        shift
-        ;;
-    esac
-  done
-
-  local dir="$HOME/Videos/ffmpeg"
-  mkdir -p "$dir"
-
-  local timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
-
-  # active window
-  local win=$(xdotool getactivewindow)
-
-  # window coordinates
-  eval "$(xdotool getwindowgeometry --shell "$win")"
-
-  # detect monitor containing window
-  local monitor=$(xrandr --listmonitors | awk -v x="$X" -v y="$Y" '
-    NR>1 {
-      split($3,a,"+")
-      split(a[1],res,"x")
-      mx=a[2]; my=a[3]
-      mw=res[1]; mh=res[2]
-      if (x>=mx && x<mx+mw && y>=my && y<my+mh) {
-        print mx","my
-        exit
-      }
-    }')
-
-  [[ -z "$monitor" ]] && monitor="0,0"
-
-  ffmpeg \
-    -video_size "$resolution" \
-    -framerate "$fps" \
-    -f x11grab \
-    -i ":0.0+$monitor" \
-    -vaapi_device /dev/dri/renderD128 \
-    -vf 'format=nv12,hwupload' \
-    -c:v h264_vaapi \
-    "$dir/${timestamp}_${name}.mp4"
-}
 SCRIPT_DIR="$HOME/.scripts"
+
+# func/ — source first so functions are available to everything else
+for f in "$SCRIPT_DIR"/func/*.sh; do
+    [[ -f "$f" ]] && source "$f"
+done
+
+# shell/ — source into current shell (cd and env changes persist)
+for f in "$SCRIPT_DIR"/shell/*.sh; do
+    [[ -f "$f" ]] || continue
+    name="${f:t:r}"
+    # wrap in a function so the script only runs when called by name,
+    # not on every shell startup
+    eval "${name}() { source \"${f}\"; }"
+done
+
+# top-level scripts — alias to run via bash
 for script in "$SCRIPT_DIR"/*.sh; do
     [[ -f "$script" ]] || continue
     name="${script:t:r}"
     alias "$name"="bash \"$script\""
 done
 
-for f in "$SCRIPT_DIR"/func/*.sh; do
-    [[ -f "$f" ]] && source "$f"
-done
-
-if [[ -f /usr/share/doc/pkgfile/command-not-found.zsh ]]; then
-    source /usr/share/doc/pkgfile/command-not-found.zsh
-elif [[ -f /usr/share/doc/pkgfile/command-not-found.bash ]]; then
-    source /usr/share/doc/pkgfile/command-not-found.bash
-fi
-
-#######################################################
-# HISTORY & AUTOCOMPLETE
-#######################################################
+# ── History ───────────────────────────────────────────────────────────────────
 HISTFILE=~/.zsh_history
 HISTSIZE=5000
 SAVEHIST=5000
 setopt HIST_IGNORE_ALL_DUPS SHARE_HISTORY HIST_VERIFY
 
-# Autosuggestions
-if [[ -d /usr/share/zsh/plugins/zsh-autosuggestions ]]; then
+# ── Plugins ───────────────────────────────────────────────────────────────────
+[[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && {
     source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
     ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
-fi
+}
 
-# Syntax highlighting
-if [[ -d /usr/share/zsh/plugins/zsh-syntax-highlighting ]]; then
+[[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && \
     source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-fi
 
-##
+# command-not-found suggestions
+[[ -f /usr/share/doc/pkgfile/command-not-found.zsh ]] \
+    && source /usr/share/doc/pkgfile/command-not-found.zsh \
+    || [[ -f /usr/share/doc/pkgfile/command-not-found.bash ]] \
+    && source /usr/share/doc/pkgfile/command-not-found.bash
+
+# ── Path ──────────────────────────────────────────────────────────────────────
 export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
 
