@@ -1,0 +1,21 @@
+IMAPAccount hostinger
+Host imap.hostinger.com
+User mail@david-star.com
+PassCmd "pass email/hostinger"
+TLSType IMAPS
+AuthMechs LOGIN
+
+IMAPStore hostinger-remote
+Account hostinger
+
+MaildirStore hostinger-local
+Subfolders Verbatim
+Path ~/Mail/
+Inbox ~/Mail/INBOX
+
+Channel hostinger
+Far :hostinger-remote:
+Near :hostinger-local:
+Patterns *
+Create Both
+SyncState *
