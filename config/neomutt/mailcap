@@ -1,0 +1,44 @@
+
+# =============================================================================
+# ~/.config/neomutt/mailcap
+# Tells neomutt how to render each MIME type inline in the terminal.
+#
+# 'copiousoutput' means the command produces text that neomutt pipes through
+# its pager — this is what makes things appear inline instead of opening a
+# separate window.
+# =============================================================================
+
+# ── HTML ──────────────────────────────────────────────────────────────────────
+# Render HTML to plain text using w3m. The -T flag tells w3m the input is HTML.
+# -dump prints to stdout instead of launching interactive mode.
+# nametemplate gives the temp file the right extension so w3m detects the type.
+text/html; LC_ALL=en_US.UTF-8 w3m -dump -T text/html -o display_link_number=1 %s | tr -d '\200-\237' | cat -v | grep -v '\\^'; nametemplate=%s.html; copiousoutput
+
+# ── PDF ───────────────────────────────────────────────────────────────────────
+# Extract text from PDFs and display inline. -layout tries to preserve columns.
+# Requires: poppler (pdftotext is part of it)
+application/pdf; pdftotext -layout %s -; copiousoutput
+
+# ── Calendar / iCal ───────────────────────────────────────────────────────────
+# Show raw iCal as text — readable enough for meeting invites.
+text/calendar; cat %s; copiousoutput
+
+# ── Plain text variants ───────────────────────────────────────────────────────
+text/plain; cat %s; copiousoutput
+
+# ── Images ────────────────────────────────────────────────────────────────────
+# Alacritty has no inline image protocol, so we just print the filename and type.
+# Remove this block and replace with a kitty/sixel variant if you switch terminals.
+image/jpeg; kitty +kitten icat %s; copiousoutput
+image/png;  kitty +kitten icat %s; copiousoutput
+image/gif;  kitty +kitten icat %s; copiousoutput
+image/webp; kitty +kitten icat %s; copiousoutput
+image/*;    kitty +kitten icat %s; copiousoutput
+
+# ── Audio / Video ─────────────────────────────────────────────────────────────
+# Can't render these in terminal — just say what they are.
+audio/*; echo "[Audio attachment: %s]"; copiousoutput
+video/*; echo "[Video attachment: %s]"; copiousoutput
+
+# ── Generic binary fallback ───────────────────────────────────────────────────
+application/octet-stream; echo "[Binary attachment: %s]"; copiousoutput

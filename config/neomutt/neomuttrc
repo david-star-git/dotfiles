@@ -1,0 +1,261 @@
+
+# =============================================================================
+# ~/.config/neomutt/neomuttrc
+# My NeoMutt configuration
+# =============================================================================
+
+# ── Identity ──────────────────────────────────────────────────────────────────
+set realname      = "David"
+set from          = "mail@david-star.com"
+set use_from      = yes
+set envelope_from = yes  # make the envelope From match the header From (important for msmtp)
+
+# ── Mail storage (Maildir, synced by mbsync) ──────────────────────────────────
+set folder    = "~/Mail"
+set spoolfile = "+INBOX"
+set record    = "+Sent"
+set postponed = "+Drafts"
+set trash     = "+Trash"
+set mbox_type = Maildir
+
+# Register mailboxes so the sidebar knows about them
+named-mailboxes "INBOX"   =INBOX
+named-mailboxes "Sent"    =Sent
+named-mailboxes "Drafts"  =Drafts
+named-mailboxes "Trash"   =Trash
+
+# ── Sending ───────────────────────────────────────────────────────────────────
+set sendmail = "/usr/bin/msmtp"
+
+# ── Editor ────────────────────────────────────────────────────────────────────
+set editor = "nvim"
+
+# ── Mail sync / polling ───────────────────────────────────────────────────────
+# Automatically check for new mail every 5 minutes.
+# The sidebar counts stay fresh thanks to mail_check_stats.
+# timeout controls how often neomutt polls while sitting idle (not a mail check,
+# just the event loop heartbeat — needed for the above to fire reliably).
+set mail_check       = 300   # seconds between background mail checks
+set mail_check_stats = yes   # recompute sidebar message counts on each check
+set timeout          = 10    # idle event-loop interval in seconds
+
+# Manual sync keybinding: press G in the index to run mbsync and refresh.
+# This blocks the UI briefly while mbsync runs — that's intentional.
+macro index G "<shell-escape>mbsync -a<enter><refresh>" "Sync all mailboxes with mbsync"
+
+# ── TLS ───────────────────────────────────────────────────────────────────────
+set ssl_starttls  = yes
+set ssl_force_tls = yes  # refuse to connect if TLS negotiation fails
+
+# ── Encoding ──────────────────────────────────────────────────────────────────
+set charset          = "utf-8"
+set send_charset     = "utf-8:iso-8859-1:us-ascii"  # fallback chain when sending
+set assumed_charset  = "utf-8"                       # assume this if mail has no charset header
+
+# ── MIME / Attachment viewing ─────────────────────────────────────────────────
+# Prefer plain text; only fall back to HTML if no plain part exists.
+# auto_view tells neomutt to render these types inline via mailcap.
+alternative_order text/plain text/enriched text/html
+auto_view text/html text/calendar application/pdf
+
+# My mailcap file defines how each MIME type gets rendered in the terminal.
+set mailcap_path = "~/.config/neomutt/mailcap"
+
+# Show a clear indicator in the index when a message has attachments.
+set attach_format = "%u%D%I %t %4n %T%?C? [%C]? %> %d"
+
+# ── GPG / Cryptography ────────────────────────────────────────────────────────
+# Use GPGME — the proper backend. This talks directly to gpg-agent and
+# respects all settings in ~/.gnupg/gpg.conf, including trust-model tofu+pgp
+# and auto-key-locate. Do NOT use the legacy pgp_* pipe variables alongside this.
+set crypt_use_gpgme = yes
+
+# Auto-sign everything I send.
+set crypt_autosign     = yes
+set crypt_replysign    = yes  # always sign replies, even to unsigned mail
+
+# Don't blindly encrypt all outgoing mail — only encrypt when I have a key
+# for every recipient (opportunistic mode). This avoids failed sends.
+set crypt_replyencrypt        = no
+set crypt_opportunistic_encrypt = no
+# press p before sending to change
+
+# The key to sign with. Matches the from address.
+set pgp_sign_as = "mail@david-star.com"
+
+# Always verify incoming signatures and show the result in the pager.
+set crypt_verify_sig = yes
+set crypt_timestamp  = yes  # include a timestamp in the crypto status line
+
+# Key auto-retrieval is handled by gpg itself, not neomutt, when using GPGME.
+# The relevant settings live in ~/.gnupg/gpg.conf — see the NOTES section at
+# the bottom of this file. Setting this anyway for the non-GPGME fallback path.
+# set pgp_auto_key_retrieve = yes
+
+# ── Behaviour ─────────────────────────────────────────────────────────────────
+set move        = no    # never silently move read mail to mbox
+set mark_old    = no    # don't dim unread mail as "old" — new is new
+set menu_scroll = yes   # scroll menus line-by-line instead of jumping pages
+set markers     = no    # don't print a '+' at the start of wrapped lines
+
+# ── Threading ─────────────────────────────────────────────────────────────────
+# Group messages by thread; show newest threads at the top; within a thread
+# show the most-recently-received message last (chronological reading order).
+set sort           = threads
+set sort_aux       = reverse-last-date-received
+set strict_threads = yes   # only thread by References/In-Reply-To, not Subject
+set thread_received = yes  # sort threads by when I received them, not sent date
+
+# ── Pager ─────────────────────────────────────────────────────────────────────
+set pager_context     = 4    # lines of overlap when paging forward/back
+set pager_index_lines = 8    # lines of the index visible above the pager
+set pager_stop        = yes  # don't auto-advance to the next message at end of pager
+
+# ── Date and index format ─────────────────────────────────────────────────────
+set date_format  = "%Y-%m-%d %H:%M"
+# Column layout: number, flags, date, sender (20 chars), subject
+set index_format = "%4C %Z %{%Y-%m-%d} %-20.20F  %s"
+
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+set sidebar_visible      = yes
+set sidebar_width        = 28
+set sidebar_short_path   = yes          # strip the leading folder path
+set sidebar_divider_char = "│"          # unicode line between sidebar and index
+# Format: mailbox name, flagged count if any, new/total count on the right
+set sidebar_format       = "%B%?F? [%F]?%* %?N?%N/?%S"
+
+# ── Status bar ────────────────────────────────────────────────────────────────
+set status_format = " %f  [%<M?%M/>%m msgs%?n?, %n new?]  %> %P "
+
+# ── Colors ────────────────────────────────────────────────────────────────────
+
+# Base interface
+color normal       white          default
+color indicator    black          cyan        # currently selected message
+color status       black          green       # status bar
+color tree         yellow         default     # thread tree lines
+color error        brightred      default
+color message      cyan           default     # informational messages
+color search       black          yellow      # search highlights
+color tilde        brightblack    default     # empty lines below message list
+color markers      brightblack    default     # line-wrap markers
+
+# Sidebar
+color sidebar_new        brightyellow   default   # mailboxes with new mail
+color sidebar_highlight  black          cyan      # currently open mailbox
+color sidebar_divider    brightblack    default
+
+# Index — message states
+color index  brightyellow  default  ~N   # new / unread
+color index  brightcyan    default  ~F   # flagged
+color index  brightblack   default  ~D   # deleted (before purge)
+color index  green         default  ~T   # tagged
+
+# Dim the PGP info block delimiters so they fade into the background
+color attachment  brightblack  default
+
+# Rainbow header colors
+color header  brightred     default  "^From:"
+color header  yellow        default  "^To:"
+color header  brightyellow  default  "^Cc:"
+color header  brightgreen   default  "^Subject:"
+color header  cyan          default  "^Date:"
+
+# PGP block fields
+color body  brightblue    default  "^Recipient:"
+color body  cyan          default  "^ *created:"
+
+# ── Signature / trust status colors in the pager ──────────────────────────────
+# These match the lines GPGME prints above the message body.
+# TOFU+PGP trust levels:
+#   - fully trusted (pgp web-of-trust or tofu confirmed)  → bright green
+#   - tofu learning / marginal trust                      → yellow
+#   - bad / wrong signature                               → bright red
+#   - encrypted but no signature                          → dim
+#   - key expired or revoked                              → red
+
+# Fully verified — key is trusted by WoT or TOFU has confirmed identity
+color body  brightgreen   default  "Good signature from"
+color body  brightgreen   default  "Verified sender"
+
+# Signature checks out cryptographically, but key isn't fully trusted yet
+# (common during TOFU's learning period or for marginal keys)
+color body  yellow        default  "Good signature.*not certified"
+color body  yellow        default  "WARNING: This key is not certified"
+color body  yellow        default  "[(]uncertain[)]"
+
+# Signature is cryptographically wrong — message may have been tampered with
+color body  brightred     default  "BAD signature"
+color body  brightred     default  "Error checking signature"
+color body  brightred     default  "signature verification failed"
+
+# Message was not signed at all
+color body  brightblack   default  "Not signed"
+color body  brightblack   default  "No signature"
+
+# Key problems
+color body  red           default  "Key expired"
+color body  red           default  "Key revoked"
+color body  red           default  "No public key"
+
+# ── Keybindings ───────────────────────────────────────────────────────────────
+# Sidebar navigation with arrow keys
+bind index,pager <down>   sidebar-next
+bind index,pager <up>     sidebar-prev
+bind index,pager <right>  sidebar-open
+bind index,pager B        sidebar-toggle-visible
+
+# Open URLs found in the current message (requires urlscan: pacman -S urlscan)
+macro index,pager \cb "<pipe-message>urlscan<enter>" "Browse URLs in message"
+
+# ── Local overrides ───────────────────────────────────────────────────────────
+# Machine-specific settings, secrets, or temporary tweaks go here.
+# The '2>/dev/null || true' means neomutt won't complain if the file doesn't exist.
+source "~/.config/neomutt/local.muttrc"
+
+echo '
+# Hide all headers, then selectively show only useful ones
+ignore *
+unignore from: to: cc: bcc: date: subject: x-mailer: user-agent:
+unhdr_order *
+hdr_order from: to: cc: bcc: date: subject:' >> ~/.config/neomutt/neomuttrc
+
+
+# Quoted text levels — each level of > gets its own color
+color quoted    cyan        default
+color quoted1   blue        default
+color quoted2   green       default
+color quoted3   brightblack default
+
+set mouse = yes
+
+# =============================================================================
+# NOTES — settings that live outside neomutt
+# =============================================================================
+#
+# ── ~/.gnupg/gpg.conf ────────────────────────────────────────────────────────
+# Add these lines to enable TOFU+PGP trust, WKD/keyserver auto-lookup,
+# and automatic key retrieval when verifying signatures:
+#
+#   trust-model          tofu+pgp
+#   auto-key-locate      local,wkd,keyserver
+#   keyserver            hkps://keys.openpgp.org
+#   keyserver-options    auto-key-retrieve
+#
+# trust-model tofu+pgp means:
+#   - GPG first checks the classic PGP web-of-trust
+#   - If that gives no answer, it falls back to TOFU (trust on first use)
+#   - TOFU builds a local history of "I have seen this key for this email N times"
+#   - Over time, TOFU upgrades marginal trust to full trust automatically
+#
+# auto-key-locate order:
+#   local      — check my local keyring first (fastest)
+#   wkd        — Web Key Directory (fetches from the sender's mail domain)
+#   keyserver  — fall back to keys.openpgp.org
+#
+# ── ~/.config/neomutt/mailcap ────────────────────────────────────────────────
+# See the separate mailcap file. Install dependencies:
+#   sudo pacman -S w3m poppler urlscan
+#
+# =============================================================================
+
