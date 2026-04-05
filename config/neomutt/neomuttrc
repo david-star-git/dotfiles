@@ -1,4 +1,3 @@
-
 # =============================================================================
 # ~/.config/neomutt/neomuttrc
 # My NeoMutt configuration
@@ -199,11 +198,28 @@ color body  red           default  "Key revoked"
 color body  red           default  "No public key"
 
 # ── Keybindings ───────────────────────────────────────────────────────────────
-# Sidebar navigation with arrow keys
-bind index,pager <down>   sidebar-next
-bind index,pager <up>     sidebar-prev
-bind index,pager <right>  sidebar-open
-bind index,pager B        sidebar-toggle-visible
+# Navigation follows the same layout as nvim, tmux and i3:
+#   j = left / back   k = up / previous   l = down / next   ö = right / open
+#
+# In a mail client "left/right" maps to pager scroll and sidebar open,
+# while "up/down" maps to moving through the message list.
+
+# Index — message list navigation
+bind index k  previous-entry        # k = up   (previous message)
+bind index l  next-entry            # l = down (next message)
+bind index ö  display-message       # ö = open (right / enter)
+
+# Pager — reading a message
+bind pager k  previous-line         # k = scroll up
+bind pager l  next-line             # l = scroll down
+bind pager j  exit                  # j = back to index (left)
+bind pager ö  next-entry            # ö = next message without going back
+
+# Sidebar navigation
+bind index,pager K  sidebar-prev    # K = up in sidebar
+bind index,pager L  sidebar-next    # L = down in sidebar
+bind index,pager Ö  sidebar-open    # Ö = open selected mailbox
+bind index,pager B  sidebar-toggle-visible
 
 # Open URLs found in the current message (requires urlscan: pacman -S urlscan)
 macro index,pager \cb "<pipe-message>urlscan<enter>" "Browse URLs in message"
@@ -258,4 +274,5 @@ set mouse = yes
 #   sudo pacman -S w3m poppler urlscan
 #
 # =============================================================================
+
 
