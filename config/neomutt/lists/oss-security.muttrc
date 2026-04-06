@@ -1,0 +1,27 @@
+# =============================================================================
+# ~/.config/neomutt/lists/oss-security.muttrc
+# oss-security mailing list — oss-security@lists.openwall.com
+#
+# This file is sourced automatically by neomuttrc via:
+#   source ~/.config/neomutt/lists/*.muttrc
+#
+# To disable this list: remove or rename this file.
+# =============================================================================
+
+# Register the folder in the sidebar.
+named-mailboxes "  OssSecurity" =OssSecurity
+
+# ── Folder hooks ──────────────────────────────────────────────────────────────
+folder-hook =OssSecurity 'set sort = reverse-date'   # newest CVEs first
+folder-hook =OssSecurity 'set strict_threads = yes'  # disclosure threads are tight
+
+# ── Score rules ───────────────────────────────────────────────────────────────
+# Boost CVE disclosures so they stand out.
+score '~f oss-security ~s "CVE"'    20
+score '~f oss-security ~s "proof"'  15   # PoC disclosures
+score '~f oss-security ~s "0day"'   25
+
+# ── Colors ────────────────────────────────────────────────────────────────────
+# Highlight CVE posts in the index — security disclosures deserve attention.
+color index brightred default "~f oss-security.*openwall ~s CVE ~N"
+color index red        default "~f oss-security.*openwall ~s CVE"

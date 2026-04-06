@@ -1,3 +1,4 @@
+
 # =============================================================================
 # ~/.config/neomutt/neomuttrc
 # My NeoMutt configuration
@@ -23,6 +24,9 @@ named-mailboxes "Sent"    =Sent
 named-mailboxes "Drafts"  =Drafts
 named-mailboxes "Trash"   =Trash
 
+# Mailing lists
+mailboxes =AUR =OssSecurity
+
 # ── Sending ───────────────────────────────────────────────────────────────────
 set sendmail = "/usr/bin/msmtp"
 
@@ -40,7 +44,11 @@ set timeout          = 10    # idle event-loop interval in seconds
 
 # Manual sync keybinding: press G in the index to run mbsync and refresh.
 # This blocks the UI briefly while mbsync runs — that's intentional.
-macro index G "<shell-escape>mbsync -a<enter><refresh>" "Sync all mailboxes with mbsync"
+# Sync mail in a background tmux window so neomutt stays usable while syncing.
+# A new window named "mail-sync" is created, mbsync runs, mailsort moves list
+# mail into the right folders, then the window closes automatically.
+# If mbsync or mailsort errors, the window stays open so you can read the error.
+macro index G "<shell-escape>bash ~/.scripts/mail-sync.sh<enter><refresh>" "Sync mail in background"
 
 # ── TLS ───────────────────────────────────────────────────────────────────────
 set ssl_starttls  = yes
@@ -224,9 +232,16 @@ bind index,pager B  sidebar-toggle-visible
 # Open URLs found in the current message (requires urlscan: pacman -S urlscan)
 macro index,pager \cb "<pipe-message>urlscan<enter>" "Browse URLs in message"
 
+# ── Mailing lists ────────────────────────────────────────────────────────────
+# Each file in lists/ configures one mailing list — sidebar entry, folder
+# hooks, score rules, and colors. Add a new list by dropping a .muttrc file
+# in that directory. Remove a list by deleting its file.
+# The wildcard source is silent if the directory is empty or missing.
+source ~/.config/neomutt/lists/aur.muttrc
+source ~/.config/neomutt/lists/oss-security.muttrc
+
 # ── Local overrides ───────────────────────────────────────────────────────────
 # Machine-specific settings, secrets, or temporary tweaks go here.
-# The '2>/dev/null || true' means neomutt won't complain if the file doesn't exist.
 source "~/.config/neomutt/local.muttrc"
 
 echo '
@@ -243,7 +258,7 @@ color quoted1   blue        default
 color quoted2   green       default
 color quoted3   brightblack default
 
-set mouse = yes
+# set mouse = yes
 
 # =============================================================================
 # NOTES — settings that live outside neomutt
@@ -274,5 +289,3 @@ set mouse = yes
 #   sudo pacman -S w3m poppler urlscan
 #
 # =============================================================================
-
-

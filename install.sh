@@ -282,32 +282,75 @@ install_kitty() {
     ok "kitty done"
 }
 
-# --- neomutt ---
-# Installs the full mail stack:
-#   neomutt   — mail client (MUA)
-#   isync     — IMAP sync (mbsync command, config in ~/.mbsyncrc)
-#   msmtp     — SMTP sending
-#   gnupg     — PGP encryption and signing
-#   pass      — password store (GPG-backed)
-#   notmuch   — mail indexing and search
-#   w3m       — renders HTML emails as plain text in the pager
-#   poppler   — renders PDF attachments as text (pdftotext)
-#   urlscan   — extracts and lets you open URLs from messages (Ctrl+B)
+# =============================================================================
+# Mailing list installer — sourced by install.sh
 #
-# .mbsyncrc lives in config/home/ and is linked by link_home_files.
-# local.muttrc holds machine-specific secrets and is gitignored — created
-# empty here so neomutt's `source` directive doesn't error on startup.
+# Provides install_mailing_list() which creates the Maildir structure and
+# links the neomutt config for a single mailing list.
+#
+# Usage (in install.sh or called directly):
+#   install_mailing_list "AUR"           — sets up ~/Mail/AUR
+#   install_mailing_list "OssSecurity"   — sets up ~/Mail/OssSecurity
+#
+# To add a new mailing list to the system:
+#   1. Create config/neomutt/lists/<name>.muttrc in the repo.
+#   2. Add a sort_mail rule in config/home/.scripts/mailsort.sh.
+#   3. Call install_mailing_list "<name>" from the relevant install block.
+#      The name must match the Maildir folder used in mailsort.sh exactly.
+# =============================================================================
+
+# --- install_mailing_list ---
+# Creates the three standard Maildir subdirectories for a mailing list folder.
+# Maildir requires new/, cur/, and tmp/ to exist — without them mbsync and
+# neomutt will refuse to use the folder.
+#
+# This function is idempotent — safe to run multiple times.
+install_mailing_list() {
+    local name="$1"   # folder name under ~/Mail/, e.g. "AUR"
+    local dir="$ORIGINAL_HOME/Mail/$name"
+
+    info "Setting up Maildir for list: $name"
+    mkdir -p "$dir"/{new,cur,tmp}
+    ok "Maildir created: ~/Mail/$name"
+}
+
+# --- install_neomutt (extended version) ---
+# Drop this into install.sh in place of the existing install_neomutt().
+# Adds list Maildir setup and mailsort installation on top of the base config.
 install_neomutt() {
     info "Installing neomutt mail stack..."
     pacman_install neomutt isync msmtp gnupg pass notmuch w3m poppler urlscan
+
+    info "Linking neomutt config..."
     mkdir -p "$ORIGINAL_HOME/.config"
     link "$SCRIPT_DIR/config/neomutt" "$ORIGINAL_HOME/.config/neomutt"
 
-    # .mbsyncrc and any other home dotfiles come from config/home/
+    # .mbsyncrc and other home dotfiles come from config/home/
     link_home_files
 
+    # local.muttrc holds machine-specific settings and is gitignored.
+    # Create it empty so neomutt's source directive doesn't error on startup.
     local local_rc="$SCRIPT_DIR/config/neomutt/local.muttrc"
     [ ! -f "$local_rc" ] && { touch "$local_rc"; ok "Created empty local.muttrc"; }
+
+    # Ensure the lists/ directory exists inside the neomutt config so the
+    # wildcard source in neomuttrc doesn't produce an error on a fresh install.
+    mkdir -p "$SCRIPT_DIR/config/neomutt/lists"
+
+    # ── Mailing list Maildir setup ────────────────────────────────────────────
+    # Add a call here for every mailing list you're subscribed to.
+    # The folder name must match what mailsort.sh uses in its sort_mail calls.
+    install_mailing_list "AUR"
+    install_mailing_list "OssSecurity"
+
+    # ── mailsort ──────────────────────────────────────────────────────────────
+    # mailsort.sh lives in config/home/.scripts/ which link_home_files already
+    # symlinks wholesale to ~/.scripts/. No separate link is needed here —
+    # just ensure the script is executable in the repo so it works through
+    # the symlink.
+    chmod +x "$SCRIPT_DIR/config/home/.scripts/mailsort.sh"
+    ok "mailsort installed"
+
     ok "neomutt done"
 }
 

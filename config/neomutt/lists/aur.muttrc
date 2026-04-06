@@ -1,0 +1,36 @@
+# =============================================================================
+# ~/.config/neomutt/lists/aur.muttrc
+# AUR mailing list — aur-requests@lists.archlinux.org
+#
+# This file is sourced automatically by neomuttrc via:
+#   source ~/.config/neomutt/lists/*.muttrc
+#
+# To disable this list: remove or rename this file. No other config changes
+# are needed.
+# =============================================================================
+
+# Register the folder so the sidebar knows about it and shows message counts.
+# The + prefix means relative to the `folder` variable (~/Mail/).
+named-mailboxes "  AUR" =AUR
+
+# ── Folder hooks ──────────────────────────────────────────────────────────────
+# folder-hook runs whenever you enter a matching mailbox. Use it to set
+# per-list behaviour that would be inappropriate for regular mail.
+
+folder-hook =AUR 'set sort = reverse-date'      # newest list posts first
+folder-hook =AUR 'set strict_threads = no'      # AUR posts rarely thread well
+
+# ── Score rules ───────────────────────────────────────────────────────────────
+# Scoring lets you sort or highlight messages by importance. Higher score =
+# more important. These run globally (not just in the AUR folder) so they
+# work in search results and the unified inbox too.
+
+# Dim adopt/reject notifications — they're low-signal volume mail
+score '~t aur-requests@lists.archlinux.org ~s "^\[aur-requests\] \[rejected\]"' -10
+score '~t aur-requests@lists.archlinux.org ~s "^\[aur-requests\] \[accepted\]"'   5
+score '~t aur-requests@lists.archlinux.org ~s "^\[aur-requests\] \[deletion\]"'  -5
+
+# ── Colors ────────────────────────────────────────────────────────────────────
+# Color the AUR folder name in the sidebar when it has new messages.
+# (sidebar_new color applies to all new-mail folders — this is just a note.)
+color index brightyellow default "~t aur-requests@lists.archlinux.org ~N"
