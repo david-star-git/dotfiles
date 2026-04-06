@@ -165,6 +165,7 @@ git remote set-url origin git@github.com:david-star-git/dotfiles.git
 | `<prefix>g` | lazygit popup (80%×80%) |
 | `<prefix>e` | ranger popup (90%×90%) |
 | `<prefix>Enter` | Popup terminal |
+| `<prefix>m` | Sync mail in background (mbsync + mailsort) |
 
 #### Panes
 
