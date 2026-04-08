@@ -1663,15 +1663,15 @@
   <path style="opacity:0.06;fill:#585B70;fill-rule:evenodd" transform="matrix(-1.25,0,0,1.25,653.75001,-488.74824)" d="m 502,425 v 3 h 3 v -3 z"/>
   <path style="fill:#313244" d="m 26.25,41.2516 h -5 v 5 h 1.2503 v -3.75 H 26.25 Z"/>
  </g>
- <path id="menuitem-normal-top" style="fill:#585B70;fill-rule:evenodd" d="m 728,67 h 8 v 4 h -8 z"/>
- <path id="menuitem-normal-bottom" style="fill:#585B70;fill-rule:evenodd" d="m 728,79 h 8 v 4 h -8 z"/>
- <path id="menuitem-normal" style="fill:#585B70;fill-rule:evenodd" d="m 728,71 h 8 v 8 h -8 z"/>
- <path id="menuitem-normal-right" style="fill:#585B70;fill-rule:evenodd" d="m 736,71 h 4 v 8 h -4 z"/>
- <path id="menuitem-normal-left" style="fill:#585B70;fill-rule:evenodd" d="m 724,71 h 4 v 8 h -4 z"/>
- <path id="menuitem-normal-topleft" style="fill:#585B70;fill-rule:evenodd" d="m 724,67 h 4 v 4 h -4 z"/>
- <path id="menuitem-normal-topright" style="fill:#585B70;fill-rule:evenodd" d="m 736,67 h 4 v 4 h -4 z"/>
- <path id="menuitem-normal-bottomleft" style="fill:#585B70;fill-rule:evenodd" d="m 724,79 h 4 v 4 h -4 z"/>
- <path id="menuitem-normal-bottomright" style="fill:#585B70;fill-rule:evenodd" d="m 736,79 h 4 v 4 h -4 z"/>
+ <path id="menuitem-normal-top" style="fill:#C0415A;fill-rule:evenodd" d="m 728,67 h 8 v 4 h -8 z"/>
+ <path id="menuitem-normal-bottom" style="fill:#C0415A;fill-rule:evenodd" d="m 728,79 h 8 v 4 h -8 z"/>
+ <path id="menuitem-normal" style="fill:#C0415A;fill-rule:evenodd" d="m 728,71 h 8 v 8 h -8 z"/>
+ <path id="menuitem-normal-right" style="fill:#C0415A;fill-rule:evenodd" d="m 736,71 h 4 v 8 h -4 z"/>
+ <path id="menuitem-normal-left" style="fill:#C0415A;fill-rule:evenodd" d="m 724,71 h 4 v 8 h -4 z"/>
+ <path id="menuitem-normal-topleft" style="fill:#C0415A;fill-rule:evenodd" d="m 724,67 h 4 v 4 h -4 z"/>
+ <path id="menuitem-normal-topright" style="fill:#C0415A;fill-rule:evenodd" d="m 736,67 h 4 v 4 h -4 z"/>
+ <path id="menuitem-normal-bottomleft" style="fill:#C0415A;fill-rule:evenodd" d="m 724,79 h 4 v 4 h -4 z"/>
+ <path id="menuitem-normal-bottomright" style="fill:#C0415A;fill-rule:evenodd" d="m 736,79 h 4 v 4 h -4 z"/>
  <g id="menu-shadow-topleft" transform="translate(17.00002,-189)">
   <path style="opacity:0.3;fill:url(#radialGradient11175)" d="m 515,320 h 10 v 10 h -10 z"/>
   <path style="fill:#313244" d="m 521,330 c -2e-5,-3 1.94498,-4 4,-4 v 4 z"/>
@@ -1745,10 +1745,10 @@
   <path style="fill:#313244" d="m 508.00001,373.00026 c 0,2.99974 -1.94498,3.99974 -4,3.99974 v -4 z"/>
   <path style="fill:#1E1E2E" d="m 507.99998,372.99998 a 3.9999998,4.0000001 0 0 1 -4,4 v 1 a 4.9999999,5.0000001 0 0 0 5,-5 z"/>
  </g>
- <path id="menu-shadow-hint-bottom" style="fill:#CBA6F7" d="m 564.00002,188 h 2 v 6 h -2 z"/>
- <path id="menu-shadow-hint-top" style="fill:#CBA6F7" d="m 564.00002,131 h 2 v 6 h -2 z"/>
- <path id="menu-shadow-hint-right" style="fill:#CBA6F7" d="m 592,163.49376 v -2 h 6 v 2 z"/>
- <path id="menu-shadow-hint-left" style="fill:#CBA6F7" d="m 532.00002,163 v -2 h 6 v 2 z"/>
+ <path id="menu-shadow-hint-bottom" style="fill:#C0415A" d="m 564.00002,188 h 2 v 6 h -2 z"/>
+ <path id="menu-shadow-hint-top" style="fill:#C0415A" d="m 564.00002,131 h 2 v 6 h -2 z"/>
+ <path id="menu-shadow-hint-right" style="fill:#C0415A" d="m 592,163.49376 v -2 h 6 v 2 z"/>
+ <path id="menu-shadow-hint-left" style="fill:#C0415A" d="m 532.00002,163 v -2 h 6 v 2 z"/>
  <g id="button-normal-left" transform="matrix(0.8,0,0,0.98461538,105,-30.001575)">
   <path style="fill:#313244;fill-rule:evenodd" d="M 28.75,81.2514 V 48.7516 h -7.5 v 32.5 z"/>
   <path style="fill:#1E1E2E" d="m 21.25,48.7516 v 32.5 h 2.5 v -32.5 z"/>

@@ -26,7 +26,7 @@ popup_blurring=true
 opaque=kaffeine,kmplayer,subtitlecomposer,kdenlive,vlc,smplayer,smplayer2,avidemux,avidemux2_qt4,avidemux3_qt4,avidemux3_qt5,kamoso,QtCreator,VirtualBox,VirtualBoxVM,trojita,dragon,digikam,lyx
 group_toolbar_buttons=false
 vertical_spin_indicators=false
-fill_rubberband=false
+fill_rubberband=true
 spread_progressbar=true
 merge_menubar_with_toolbar=true
 small_icon_size=16
@@ -64,13 +64,13 @@ drag_from_buttons=false
 hide_combo_checkboxes=false
 intensity=1.00
 no_inactiveness=false
-reduce_menu_opacity=60
+reduce_menu_opacity=55
 reduce_window_opacity=60
 saturation=1.00
 shadowless_popup=true
 transient_groove=false
-menu_blur_radius=3
-tooltip_blur_radius=3
+menu_blur_radius=6
+tooltip_blur_radius=6
 
 [GeneralColors]
 window.color=#1E1E2E
@@ -124,6 +124,7 @@ frame=true
 
 [PanelButtonCommand]
 inherits=PanelButtonCommand
+frame.expansion=10
 interior.element=button
 frame.element=button
 text.normal.color=#CDD6F4
@@ -371,6 +372,7 @@ frame.element=menu
 interior.element=menu
 inherits=PanelButtonCommand
 text.press.color=#FFFFFF
+frame.expansion=10
 text.toggle.color=#FFFFFF
 text.bold=false
 frame.top=3
@@ -381,6 +383,7 @@ frame.right=3
 [MenuItem]
 inherits=PanelButtonCommand
 interior.element=menuitem
+frame.expansion=10
 indicator.size=8
 text.focus.color=#CDD6F4
 text.press.color=#CDD6F4
