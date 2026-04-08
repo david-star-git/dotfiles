@@ -291,6 +291,7 @@ install_kitty() {
 # Usage (in install.sh or called directly):
 #   install_mailing_list "AUR"           — sets up ~/Mail/AUR
 #   install_mailing_list "OssSecurity"   — sets up ~/Mail/OssSecurity
+#   install_mailing_list "Arch"          — sets up ~/Mail/Arch
 #
 # To add a new mailing list to the system:
 #   1. Create config/neomutt/lists/<name>.muttrc in the repo.
@@ -342,6 +343,7 @@ install_neomutt() {
     # The folder name must match what mailsort.sh uses in its sort_mail calls.
     install_mailing_list "AUR"
     install_mailing_list "OssSecurity"
+    install_mailing_list "Arch"
 
     # ── mailsort ──────────────────────────────────────────────────────────────
     # mailsort.sh lives in config/home/.scripts/ which link_home_files already

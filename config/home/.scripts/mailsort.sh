@@ -16,19 +16,15 @@
 # Rules are matched against the To:, Cc:, and List-Id: headers in order.
 # The first match wins — a message is never moved twice.
 # =============================================================================
-
 MAIL_DIR="$HOME/Mail"
 INBOX="$MAIL_DIR/INBOX"
-
 # ── Colors for terminal output ─────────────────────────────────────────────────
 GREEN="\e[32m"
 YELLOW="\e[33m"
 BLUE="\e[34m"
 NC="\e[0m"
-
 moved=0
 checked=0
-
 # =============================================================================
 # sort_mail <folder> <header_pattern>
 #
@@ -41,27 +37,21 @@ checked=0
 sort_mail() {
     local folder="$1"       # destination folder name, e.g. "AUR" or "OssSecurity"
     local pattern="$2"      # grep -Ei pattern matched against message headers
-
     local dest="$MAIL_DIR/$folder/new"
-
     # Create the Maildir structure if it doesn't exist yet.
     # This is a safety net — the installer should have done this already.
     mkdir -p "$MAIL_DIR/$folder"/{new,cur,tmp}
-
     # Check both new/ (unseen) and cur/ (previously seen but still in INBOX)
     for subdir in new cur; do
         local src="$INBOX/$subdir"
         [[ -d "$src" ]] || continue
-
         for msg in "$src"/*; do
             [[ -f "$msg" ]] || continue
             (( checked++ ))
-
             # Read only the headers — stop at the first blank line.
             # This is much faster than reading the whole message body.
             local headers
             headers=$(awk '/^$/{exit} {print}' "$msg")
-
             if echo "$headers" | grep -Eiq "$pattern"; then
                 mv "$msg" "$dest/"
                 echo -e "${GREEN}  → $(basename "$msg")${NC} ${BLUE}[$folder]${NC}"
@@ -70,7 +60,6 @@ sort_mail() {
         done
     done
 }
-
 # =============================================================================
 # Mailing list rules
 #
@@ -84,9 +73,13 @@ sort_mail() {
 #   - To/Cc addresses are plain email addresses.
 # =============================================================================
 
-# AUR notifications — sent to the aur-requests mailing list
+# AUR requests — aur-general-request and aur-dev-request
 sort_mail "AUR" \
-    "^(To|Cc):.*aur-requests@lists\.archlinux\.org|^List-Id:.*aur-requests"
+    "^(To|Cc):.*aur-(general|dev)-request@lists\.archlinux\.org|^List-Id:.*aur-(general|dev)-request"
+
+# Arch Linux requests — arch-security-request and pacman-dev-request
+sort_mail "Arch" \
+    "^(To|Cc):.*(arch-security-request|pacman-dev-request)@lists\.archlinux\.org|^List-Id:.*(arch-security-request|pacman-dev-request)"
 
 # oss-security — sent directly to your address from the openwall list
 sort_mail "OssSecurity" \

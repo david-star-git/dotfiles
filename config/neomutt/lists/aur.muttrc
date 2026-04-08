@@ -1,6 +1,6 @@
 # =============================================================================
 # ~/.config/neomutt/lists/aur.muttrc
-# AUR mailing list — aur-requests@lists.archlinux.org
+# AUR mailing lists — aur-general-request@ and aur-dev-request@
 #
 # This file is sourced automatically by neomuttrc via:
 #   source ~/.config/neomutt/lists/*.muttrc
@@ -14,23 +14,21 @@
 named-mailboxes "  AUR" =AUR
 
 # ── Folder hooks ──────────────────────────────────────────────────────────────
-# folder-hook runs whenever you enter a matching mailbox. Use it to set
-# per-list behaviour that would be inappropriate for regular mail.
-
 folder-hook =AUR 'set sort = reverse-date'      # newest list posts first
-folder-hook =AUR 'set strict_threads = no'      # AUR posts rarely thread well
+folder-hook =AUR 'set strict_threads = no'      # request posts rarely thread well
 
 # ── Score rules ───────────────────────────────────────────────────────────────
-# Scoring lets you sort or highlight messages by importance. Higher score =
-# more important. These run globally (not just in the AUR folder) so they
-# work in search results and the unified inbox too.
+# Both request addresses land in the same folder, so we match either.
 
-# Dim adopt/reject notifications — they're low-signal volume mail
-score '~t aur-requests@lists.archlinux.org ~s "^\[aur-requests\] \[rejected\]"' -10
-score '~t aur-requests@lists.archlinux.org ~s "^\[aur-requests\] \[accepted\]"'   5
-score '~t aur-requests@lists.archlinux.org ~s "^\[aur-requests\] \[deletion\]"'  -5
+# aur-general-request: orphan/deletion/flagging requests
+score '~C aur-general-request@lists.archlinux.org ~s "\[rejected\]"'  -10
+score '~C aur-general-request@lists.archlinux.org ~s "\[accepted\]"'    5
+score '~C aur-general-request@lists.archlinux.org ~s "\[deletion\]"'   -5
+
+# aur-dev-request: developer/infrastructure traffic — higher signal
+score '~C aur-dev-request@lists.archlinux.org' 10
 
 # ── Colors ────────────────────────────────────────────────────────────────────
-# Color the AUR folder name in the sidebar when it has new messages.
-# (sidebar_new color applies to all new-mail folders — this is just a note.)
-color index brightyellow default "~t aur-requests@lists.archlinux.org ~N"
+color index brightyellow default "~C aur-general-request@lists.archlinux.org ~N"
+color index brightyellow default "~C aur-dev-request@lists.archlinux.org ~N"
+

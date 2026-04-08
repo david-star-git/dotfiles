@@ -1,0 +1,34 @@
+# =============================================================================
+# ~/.config/neomutt/lists/arch.muttrc
+# Arch Linux mailing lists — arch-security-request@ and pacman-dev-request@
+#
+# This file is sourced automatically by neomuttrc via:
+#   source ~/.config/neomutt/lists/*.muttrc
+#
+# To disable this list: remove or rename this file. No other config changes
+# are needed.
+# =============================================================================
+
+# Register the folder so the sidebar knows about it and shows message counts.
+named-mailboxes "  Arch" =Arch
+
+# ── Folder hooks ──────────────────────────────────────────────────────────────
+folder-hook =Arch 'set sort = reverse-date'     # newest first
+folder-hook =Arch 'set strict_threads = yes'    # security threads are tight
+
+# ── Score rules ───────────────────────────────────────────────────────────────
+# arch-security-request: vulnerability/advisory traffic — boost CVE posts
+score '~C arch-security-request@lists.archlinux.org ~s "CVE"'    20
+score '~C arch-security-request@lists.archlinux.org ~s "advisory"' 15
+score '~C arch-security-request@lists.archlinux.org ~s "\[rejected\]"' -10
+score '~C arch-security-request@lists.archlinux.org ~s "\[accepted\]"'   5
+
+# pacman-dev-request: packaging/dev requests — moderate signal
+score '~C pacman-dev-request@lists.archlinux.org' 8
+
+# ── Colors ────────────────────────────────────────────────────────────────────
+# Security advisories get red; generic new mail gets yellow.
+color index brightred    default "~C arch-security-request@lists.archlinux.org ~s CVE ~N"
+color index red          default "~C arch-security-request@lists.archlinux.org ~s CVE"
+color index brightyellow default "~C arch-security-request@lists.archlinux.org ~N"
+color index brightyellow default "~C pacman-dev-request@lists.archlinux.org ~N"

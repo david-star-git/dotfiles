@@ -1,4 +1,3 @@
-
 # =============================================================================
 # ~/.config/neomutt/neomuttrc
 # My NeoMutt configuration
@@ -25,7 +24,7 @@ named-mailboxes "Drafts"  =Drafts
 named-mailboxes "Trash"   =Trash
 
 # Mailing lists
-mailboxes =AUR =OssSecurity
+mailboxes =AUR =Arch =OssSecurity
 
 # ── Sending ───────────────────────────────────────────────────────────────────
 set sendmail = "/usr/bin/msmtp"
@@ -238,6 +237,7 @@ macro index,pager \cb "<pipe-message>urlscan<enter>" "Browse URLs in message"
 # in that directory. Remove a list by deleting its file.
 # The wildcard source is silent if the directory is empty or missing.
 source ~/.config/neomutt/lists/aur.muttrc
+source ~/.config/neomutt/lists/arch.muttrc
 source ~/.config/neomutt/lists/oss-security.muttrc
 
 # ── Local overrides ───────────────────────────────────────────────────────────
@@ -289,3 +289,4 @@ color quoted3   brightblack default
 #   sudo pacman -S w3m poppler urlscan
 #
 # =============================================================================
+
