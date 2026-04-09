@@ -1,10 +1,13 @@
-/* colors */
-
 * {
-  al:  #00000000;
-  bg:  #1b1b25;
-  se:  #282a36;
-  fg:  #dedede;
-  ac:  #16161e;
-  br:  #343746;
+    /* Catppuccin Mocha + Crimson accent */
+
+    bg0:    #1E1E2EF2;  /* base */
+    bg1:    #181825;    /* mantle */
+    bg2:    #31324480;  /* surface0 w/ transparency */
+    bg3:    #C0415A;  /* crimson accent */
+
+    fg0:    #CDD6F4;    /* text */
+    fg1:    #F5E0DC;    /* rosewater (bright text / highlight) */
+    fg2:    #A6ADC8;    /* subtext0 */
+    fg3:    #313244;    /* surface0 */
 }
