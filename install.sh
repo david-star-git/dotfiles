@@ -447,6 +447,14 @@ install_fastfetch() {
     ok "fastfetch done"
 }
 
+# --- vlc ---
+# Installs VLC and required plugins for h264/h265/mpeg2/mkv/subtitle support.
+install_vlc() {
+    info "Installing VLC..."
+    pacman_install vlc vlc-plugin-ffmpeg vlc-plugin-mpeg2 vlc-plugin-matroska vlc-plugin-dvd vlc-plugin-freetype vlc-plugin-ass
+    ok "VLC done"
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -464,7 +472,8 @@ main() {
         "neomutt:neomutt + full mail stack:off" \
         "theme:Kvantum + GTK + fonts:on" \
         "security:UFW + sysctl + Tor:off" \
-        "fastfetch:fastfetch system info:on"
+        "fastfetch:fastfetch system info:on" \
+        "vlc:VLC media player:off"
 
     if [ -z "$selected" ]; then
         echo ""; warn "Nothing selected — nothing to do."; exit 0
@@ -484,6 +493,7 @@ main() {
     [[ "$selected" == *"theme"*     ]] && install_theme
     [[ "$selected" == *"security"*  ]] && install_security
     [[ "$selected" == *"fastfetch"* ]] && install_fastfetch
+    [[ "$selected" == *"vlc"*       ]] && install_vlc
 
     echo ""
     echo -e "${BOLD}${FG_CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
