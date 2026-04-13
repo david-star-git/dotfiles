@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────
+#  pkgi  —  unified interactive package installer
+#           official repos + AUR, catppuccin mocha themed
+#  place in: ~/.scripts/pkg/pkgi.sh
+#  depends:  fzf, pacman, yay (or set AUR_HELPER=paru etc.)
+# ─────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+AUR_HELPER="${AUR_HELPER:-yay}"
+
+# ── catppuccin mocha colours ──────────────────────────────────────
+C_CORE=$'\033[38;2;166;227;161m'       # green    #a6e3a1
+C_EXTRA=$'\033[38;2;137;220;235m'      # sky      #89dceb
+C_MULTI=$'\033[38;2;249;226;175m'      # yellow   #f9e2af
+C_CUSTOM=$'\033[38;2;203;166;247m'     # mauve    #cba6f7
+C_AUR=$'\033[38;2;243;139;168m'        # red      #f38ba8
+C_GREEN=$'\033[38;2;166;227;161m'
+C_CYAN=$'\033[38;2;137;220;235m'
+C_RED=$'\033[38;2;243;139;168m'
+C_BOLD=$'\033[1m'
+C_RESET=$'\033[0m'
+
+die()  { echo -e "${C_RED}✗  $*${C_RESET}" >&2; exit 1; }
+info() { echo -e "${C_CYAN}→  $*${C_RESET}"; }
+
+command -v fzf           &>/dev/null || die "fzf not installed  (sudo pacman -S fzf)"
+command -v "$AUR_HELPER" &>/dev/null || die "$AUR_HELPER not installed"
+
+# ── build merged package list ─────────────────────────────────────
+# pacman -Sl piped directly into awk — never stored in a variable
+# (avoids ARG_MAX if someone tried to -v it)
+info "Fetching package lists…"
+
+official=$(pacman -Sl 2>/dev/null | awk \
+  -v core="$C_CORE" -v extra="$C_EXTRA" \
+  -v multi="$C_MULTI" -v custom="$C_CUSTOM" \
+  -v rst="$C_RESET" '
+  {
+    repo=$1; pkg=$2
+    if      (repo=="core")     c=core
+    else if (repo=="extra")    c=extra
+    else if (repo=="multilib") c=multi
+    else                       c=custom
+    printf "%s%s/%s%s\n", c, repo, pkg, rst
+  }')
+
+aur=$("$AUR_HELPER" -Slqa 2>/dev/null \
+  | awk -v c="$C_AUR" -v rst="$C_RESET" \
+      '{printf "%saur/%s%s\n", c, $1, rst}')
+
+all_pkgs=$(printf '%s\n%s\n' "$official" "$aur" | grep -v '^$')
+
+# ── fzf catppuccin mocha colour map ──────────────────────────────
+FZF_COLORS=(
+  --color='bg:#1e1e2e'
+  --color='bg+:#313244'
+  --color='border:#585b70'
+  --color='header:#6c7086'
+  --color='info:#cba6f7'
+  --color='label:#cdd6f4'
+  --color='marker:#a6e3a1'
+  --color='pointer:#f38ba8'
+  --color='prompt:#89b4fa'
+  --color='query:#cdd6f4'
+  --color='scrollbar:#585b70'
+  --color='separator:#585b70'
+  --color='spinner:#f9e2af'
+  --color='fg:#cdd6f4'
+  --color='fg+:#cdd6f4'
+  --color='hl:#f38ba8'
+  --color='hl+:#f38ba8'
+  --color='preview-bg:#181825'
+  --color='preview-border:#585b70'
+)
+
+# ── preview ───────────────────────────────────────────────────────
+# pacman -Si reads local sync db — near-instant.
+# yay -Si only fires on confirmed aur/ entries.
+export AUR_HELPER
+preview_cmd='
+  raw={1}
+  pkg=$(printf "%s" "$raw" | sed "s/\x1B\[[0-9;]*m//g" | cut -d/ -f2-)
+  repo=$(printf "%s" "$raw" | sed "s/\x1B\[[0-9;]*m//g" | cut -d/ -f1)
+  if [[ "$repo" == "aur" ]]; then
+    "$AUR_HELPER" -Si "$pkg" 2>/dev/null || echo "No AUR info for: $pkg"
+  else
+    pacman -Si "$pkg" 2>/dev/null || echo "No info for: $pkg"
+  fi
+'
+
+color_key="${C_CORE}core${C_RESET}  ${C_EXTRA}extra${C_RESET}  ${C_MULTI}multilib${C_RESET}  ${C_CUSTOM}custom${C_RESET}  ${C_AUR}aur${C_RESET}"
+header_txt="TAB multi-select  ·  CTRL-p preview  ·  ESC abort"$'\n'"${color_key}"
+
+selected=$(
+  printf '%s\n' "$all_pkgs" \
+  | fzf \
+      --ansi \
+      --multi \
+      --layout=reverse \
+      --height=100% \
+      --border=rounded \
+      --border-label=" 󰏔  pkgi — install " \
+      --border-label-pos=3 \
+      --prompt="  ❯ " \
+      --pointer=" ▶" \
+      --marker=" ✓" \
+      --info=right \
+      --separator='─' \
+      --header="$header_txt" \
+      --preview="$preview_cmd" \
+      --preview-window='down:40%:wrap:border-top' \
+      --bind='ctrl-p:toggle-preview' \
+      "${FZF_COLORS[@]}" \
+) || exit 0
+
+[[ -z "$selected" ]] && exit 0
+
+# ── split by source and install ───────────────────────────────────
+mapfile -t lines <<< "$selected"
+official_pkgs=()
+aur_pkgs=()
+
+for line in "${lines[@]}"; do
+  clean=$(printf '%s' "$line" | sed 's/\x1B\[[0-9;]*m//g')
+  repo="${clean%%/*}"
+  pkg="${clean#*/}"
+  if [[ "$repo" == "aur" ]]; then
+    aur_pkgs+=("$pkg")
+  else
+    official_pkgs+=("$pkg")
+  fi
+done
+
+if (( ${#official_pkgs[@]} > 0 )); then
+  info "Installing from repos: ${official_pkgs[*]}"
+  sudo pacman -S --noconfirm --needed "${official_pkgs[@]}"
+fi
+
+if (( ${#aur_pkgs[@]} > 0 )); then
+  info "Installing from AUR: ${aur_pkgs[*]}"
+  "$AUR_HELPER" -S --noconfirm --needed "${aur_pkgs[@]}"
+  command -v updatedb &>/dev/null && sudo updatedb
+fi
+
+echo -e "${C_GREEN}${C_BOLD}✓  Done!${C_RESET}"

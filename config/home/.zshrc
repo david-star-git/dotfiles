@@ -1,4 +1,3 @@
-
 # =============================================================================
 # ~/.zshrc
 # =============================================================================
@@ -105,40 +104,53 @@ setprompt() {
 autoload -Uz add-zsh-hook
 add-zsh-hook precmd setprompt
 
-# ── Script autoloader ─────────────────────────────────────────────────────────
-# Three tiers of scripts, each loaded differently:
+# ── Script autoloader (recursive) ────────────────────────────────────────────
 #
-#   .scripts/*.sh        — standalone scripts, aliased by filename so typing
-#                          "record" runs bash ~/.scripts/record.sh
+# Scans ~/.scripts and ALL subdirectories recursively.
+# Three loading tiers, determined by directory name anywhere in the path:
 #
-#   .scripts/shell/*.sh  — scripts that need the current shell environment
-#                          (e.g. they use cd). Sourced so changes persist.
+#   …/func/…    — sourced immediately; become live shell functions
+#   …/shell/…   — lazy-sourced; calling the name sources into current shell
+#   everything else — aliased to `bash <path>`; runs in a subshell
 #
-#   .scripts/func/*.sh   — small helper functions, sourced so they become
-#                          shell functions callable without a subshell.
+# Works with or without .sh extensions.
+# Nested freely: ~/.scripts/pkg/pkgi, ~/.scripts/net/shell/vpn.sh, etc.
+# Duplicate names: last file wins (deeper paths sort last).
+# ─────────────────────────────────────────────────────────────────────────────
 
-SCRIPT_DIR="$HOME/.scripts"
+() {
+    local SCRIPT_DIR
+    SCRIPT_DIR="$(realpath "$HOME/.scripts")"
+    local script rel name q
+    local -a scripts
 
-# func/ — source first so functions are available to everything else
-for f in "$SCRIPT_DIR"/func/*.sh; do
-    [[ -f "$f" ]] && source "$f"
-done
+    [[ -d "$SCRIPT_DIR" ]] || return 0
 
-# shell/ — source into current shell (cd and env changes persist)
-for f in "$SCRIPT_DIR"/shell/*.sh; do
-    [[ -f "$f" ]] || continue
-    name="${f:t:r}"
-    # wrap in a function so the script only runs when called by name,
-    # not on every shell startup
-    eval "${name}() { source \"${f}\"; }"
-done
+    # Collect into array first - avoids zsh process-substitution timing
+    # issues that cause the while loop to see no input when sourced.
+    scripts=("${(@f)$(find -L "$SCRIPT_DIR" \
+        -mindepth 1 \
+        -type d \( -name '.*' -o -name 'node_modules' \) -prune \
+        -o -type f \( -name '*.sh' -o \! -name '*.*' \) -print \
+        | sort)}")
 
-# top-level scripts — alias to run via bash
-for script in "$SCRIPT_DIR"/*.sh; do
-    [[ -f "$script" ]] || continue
-    name="${script:t:r}"
-    alias "$name"="bash \"$script\""
-done
+    for script in "${scripts[@]}"; do
+        [[ -f "$script" ]] || continue
+        rel="${script#${SCRIPT_DIR}/}"
+        name="${script##*/}"
+        name="${name%.sh}"
+        q=$(printf '%q' "$script")
+
+        if [[ "$rel" == func/* || "$rel" == */func/* ]]; then
+            source "$script"
+        elif [[ "$rel" == shell/* || "$rel" == */shell/* ]]; then
+            eval "${name}() { source ${q}; }"
+        else
+            alias "${name}=bash ${q}"
+        fi
+    done
+    return 0
+}
 
 # ── History ───────────────────────────────────────────────────────────────────
 HISTFILE=~/.zsh_history

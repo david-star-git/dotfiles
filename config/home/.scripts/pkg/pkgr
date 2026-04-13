@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────
+#  pkgr  —  interactive package remover
+#           lists all explicitly installed packages (native + AUR)
+#           catppuccin mocha  ·  fast: zero per-pkg subshells
+#
+#  FIX: pacman -Sl output (~80k lines) is NEVER stored in a shell
+#  variable — doing so and passing via awk -v hits the kernel ARG_MAX
+#  limit. All bulk data flows through process substitution file
+#  descriptors directly into awk.
+#
+#  place in: ~/.scripts/pkg/pkgr.sh
+#  depends:  fzf, pacman
+# ─────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+# ── catppuccin mocha colours ──────────────────────────────────────
+C_CORE=$'\033[38;2;166;227;161m'
+C_EXTRA=$'\033[38;2;137;220;235m'
+C_MULTI=$'\033[38;2;249;226;175m'
+C_CUSTOM=$'\033[38;2;203;166;247m'
+C_AUR=$'\033[38;2;243;139;168m'
+C_GREEN=$'\033[38;2;166;227;161m'
+C_YELLOW=$'\033[38;2;249;226;175m'
+C_CYAN=$'\033[38;2;137;220;235m'
+C_RED=$'\033[38;2;243;139;168m'
+C_BOLD=$'\033[1m'
+C_RESET=$'\033[0m'
+
+die()  { echo -e "${C_RED}✗  $*${C_RESET}" >&2; exit 1; }
+info() { echo -e "${C_CYAN}→  $*${C_RESET}"; }
+warn() { echo -e "${C_YELLOW}⚠  $*${C_RESET}"; }
+
+command -v fzf &>/dev/null || die "fzf not installed  (sudo pacman -S fzf)"
+
+# ── build installed list ──────────────────────────────────────────
+# Three awk passes via process substitution — ZERO shell variables
+# holding large data, ZERO per-package subprocesses.
+#
+#   File 1 (FNR==NR):  pacman -Qm  → AUR/foreign pkg names
+#   File 2:            pacman -Sl  → repo/pkg mapping
+#   File 3:            pacman -Q   → all installed "pkg ver"
+#
+# The sentinel trick (a blank filename separator) is not needed
+# because awk distinguishes files via FNR==NR and a file counter.
+
+info "Loading installed packages…"
+
+all_installed=$(
+  awk \
+    -v core="$C_CORE"   \
+    -v extra="$C_EXTRA" \
+    -v multi="$C_MULTI" \
+    -v cust="$C_CUSTOM" \
+    -v aur_c="$C_AUR"   \
+    -v rst="$C_RESET"   \
+  '
+  # ── File 1: pacman -Qm  (foreign/AUR packages) ──────────────────
+  FILENAME == ARGV[1] {
+    aur[$1] = 1
+    next
+  }
+
+  # ── File 2: pacman -Sl  (sync db: "repo pkg ver [installed]") ───
+  FILENAME == ARGV[2] {
+    repo_of[$2] = $1
+    next
+  }
+
+  # ── File 3: pacman -Q  (all installed: "pkg ver") ───────────────
+  {
+    pkg = $1; ver = $2
+    if (pkg in aur) {
+      printf "%saur/%s%s  %s\n", aur_c, pkg, rst, ver
+    } else {
+      repo = (pkg in repo_of) ? repo_of[pkg] : "local"
+      if      (repo == "core")     c = core
+      else if (repo == "extra")    c = extra
+      else if (repo == "multilib") c = multi
+      else                         c = cust
+      printf "%s%s/%s%s  %s\n", c, repo, pkg, rst, ver
+    }
+  }
+  ' \
+  <(pacman -Qm 2>/dev/null) \
+  <(pacman -Sl 2>/dev/null) \
+  <(pacman -Q  2>/dev/null)
+)
+
+# ── fzf catppuccin mocha colour map ──────────────────────────────
+FZF_COLORS=(
+  --color='bg:#1e1e2e'
+  --color='bg+:#313244'
+  --color='border:#585b70'
+  --color='header:#6c7086'
+  --color='info:#cba6f7'
+  --color='label:#cdd6f4'
+  --color='marker:#a6e3a1'
+  --color='pointer:#f38ba8'
+  --color='prompt:#89b4fa'
+  --color='query:#cdd6f4'
+  --color='scrollbar:#585b70'
+  --color='separator:#585b70'
+  --color='spinner:#f9e2af'
+  --color='fg:#cdd6f4'
+  --color='fg+:#cdd6f4'
+  --color='hl:#f38ba8'
+  --color='hl+:#f38ba8'
+  --color='preview-bg:#181825'
+  --color='preview-border:#585b70'
+)
+
+# pacman -Qi reads the local db — no network, essentially instant
+preview_cmd='
+  raw={1}
+  pkg=$(printf "%s" "$raw" | sed "s/\x1B\[[0-9;]*m//g" | cut -d/ -f2- | awk "{print \$1}")
+  pacman -Qi "$pkg" 2>/dev/null || echo "No local info for: $pkg"
+'
+
+color_key="${C_CORE}core${C_RESET}  ${C_EXTRA}extra${C_RESET}  ${C_MULTI}multilib${C_RESET}  ${C_CUSTOM}custom${C_RESET}  ${C_AUR}aur${C_RESET}"
+header_txt="TAB multi-select  ·  CTRL-p preview  ·  ESC abort"$'\n'"${color_key}"
+
+selected=$(
+  printf '%s\n' "$all_installed" \
+  | fzf \
+      --ansi \
+      --multi \
+      --layout=reverse \
+      --height=100% \
+      --border=rounded \
+      --border-label=" 󰩺  pkgr — remove " \
+      --border-label-pos=3 \
+      --prompt="  ❯ " \
+      --pointer=" ▶" \
+      --marker=" ✓" \
+      --info=right \
+      --separator='─' \
+      --header="$header_txt" \
+      --preview="$preview_cmd" \
+      --preview-window='down:40%:wrap:border-top' \
+      --bind='ctrl-p:toggle-preview' \
+      "${FZF_COLORS[@]}" \
+) || exit 0
+
+[[ -z "$selected" ]] && exit 0
+
+# ── parse selection ───────────────────────────────────────────────
+mapfile -t lines <<< "$selected"
+pkgs=()
+for line in "${lines[@]}"; do
+  clean=$(printf '%s' "$line" | sed 's/\x1B\[[0-9;]*m//g')
+  pkg=$(printf '%s' "$clean" | cut -d/ -f2- | awk '{print $1}')
+  pkgs+=("$pkg")
+done
+
+# ── confirm and remove ────────────────────────────────────────────
+echo ""
+warn "About to remove: ${C_BOLD}${pkgs[*]}${C_RESET}"
+echo -e "  ${C_YELLOW}runs ${C_BOLD}pacman -Rns${C_RESET}${C_YELLOW} — also removes unused dependencies${C_RESET}"
+echo ""
+read -rp "  Confirm? [y/N] " confirm
+[[ "${confirm,,}" == "y" ]] || { info "Aborted."; exit 0; }
+
+sudo pacman -Rns --noconfirm "${pkgs[@]}"
+
+echo -e "\n${C_GREEN}${C_BOLD}✓  Done!${C_RESET}"
