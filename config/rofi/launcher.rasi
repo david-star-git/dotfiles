@@ -8,7 +8,7 @@
 
 * {
     // Catppuccin Mocha
-    base:       #1E1E2Eee;
+    base:       #1E1E2E66;
     mantle:     #181825ff;
     crust:      #11111Bff;
     surface0:   #313244ff;
