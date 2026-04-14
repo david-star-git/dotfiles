@@ -1,0 +1,207 @@
+// =============================================================================
+// wallpaper.rasi - rofi theme for the wallpaper switcher
+// Inherits the launcher palette but uses a wider grid layout so wallpaper
+// filenames are readable. Icons are disabled - the script passes names only.
+// Invoke via: ~/.config/rofi/scripts/wallpaper.sh
+// ===========================================================================
+
+// =============================================================================
+// launcher.rasi - rofi theme
+// Palette: Catppuccin Mocha + crimson accent (#C0415A).
+// Used for: app launcher (-show drun), wallpaper picker, any other rofi mode.
+// To invoke:
+// rofi -show drun -no-default-config -config ~/.config/rofi/launcher.rasi
+// ===========================================================================
+
+* {
+    // Catppuccin Mocha
+    base:       #1E1E2Eee;
+    mantle:     #181825ff;
+    crust:      #11111Bff;
+    surface0:   #313244ff;
+    surface1:   #45475Aff;
+    surface2:   #585B70ff;
+    overlay0:   #6C7086ff;
+    text:       #CDD6F4ff;
+    subtext0:   #A6ADC8ff;
+    blue:       #89B4FAff;
+    lavender:   #B4BEFEff;
+    green:      #A6E3A1ff;
+    red:        #F38BA8ff;
+
+    // Crimson accent - active border color from catmocha.kvconfig
+    crimson:    #C0415Aff;
+    crimson-dim:#C0415A88;
+
+    // Wiring - rofi reads these names
+    background-color:   transparent;
+    text-color:         @text;
+    border-color:       @crimson;
+}
+
+
+// - Window ----------------------------------
+window {
+    transparency:       "real";
+    background-color:   @base;
+    border:             2px solid;
+    border-color:       @crimson;
+    border-radius:      14px;
+    padding:            0px;
+    width:              560px;
+    // Vertical centering - appear slightly above screen center
+    location:           center;
+    anchor:             center;
+    x-offset:           0;
+    y-offset:           -60px;
+}
+
+// - Main box ---------------------------------
+mainbox {
+    background-color: transparent;
+    children:         [ inputbar, message, listview ];
+    spacing:          0px;
+    padding:          12px;
+}
+
+// - Input bar --------------------------------
+inputbar {
+    background-color: @surface0;
+    border-radius:    10px;
+    padding:          10px 14px;
+    spacing:          8px;
+    margin:           0px 0px 10px 0px;
+    children:         [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @crimson;
+    font:             "SF Pro Display Bold 13";
+    vertical-align:   0.5;
+}
+
+entry {
+    background-color:  transparent;
+    text-color:        @text;
+    font:              "SF Pro Display 13";
+    placeholder:       "Search...";
+    placeholder-color: @overlay0;
+    vertical-align:    0.5;
+    cursor:            text;
+}
+
+// - List view --------------------------------
+listview {
+    background-color: transparent;
+    columns:          1;
+    lines:            8;
+    spacing:          4px;
+    scrollbar:        false;
+    fixed-height:     true;
+    dynamic:          true;
+}
+
+// - Elements ---------------------------------
+element {
+    background-color: transparent;
+    border-radius:    8px;
+    padding:          8px 12px;
+    spacing:          10px;
+    orientation:      horizontal;
+    children:         [ element-icon, element-text ];
+}
+
+element.normal.normal {
+    background-color: transparent;
+    text-color:       @subtext0;
+}
+
+element.normal.urgent {
+    background-color: transparent;
+    text-color:       @red;
+}
+
+element.normal.active {
+    background-color: @surface0;
+    text-color:       @text;
+}
+
+// Hovered
+element.selected.normal {
+    background-color: @surface0;
+    text-color:       @text;
+    border:           1px solid;
+    border-color:     @crimson-dim;
+    border-radius:    8px;
+}
+
+element.selected.urgent {
+    background-color: @surface0;
+    text-color:       @red;
+}
+
+element.selected.active {
+    background-color: @surface1;
+    text-color:       @text;
+}
+
+element-icon {
+    background-color: transparent;
+    size:             24px;
+    vertical-align:   0.5;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    font:             "SF Pro Display 13";
+    vertical-align:   0.5;
+    highlight:        bold @crimson;
+}
+
+// - Message (shown on no results) ----------------------
+message {
+    background-color: transparent;
+    margin:           0px 0px 8px 0px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color:       @overlay0;
+    font:             "SF Pro Display 12";
+    padding:          4px 12px;
+}
+
+// - Scrollbar (hidden above, kept here for completeness) -----------
+scrollbar {
+    background-color: @surface0;
+    handle-color:     @crimson-dim;
+    handle-width:     4px;
+    border-radius:    4px;
+    width:            6px;
+}
+
+
+// Override window size for wallpaper picker
+window {
+    width:    680px;
+    y-offset: -40px;
+}
+
+// Two-column grid so more names fit
+listview {
+    columns: 2;
+    lines:   7;
+    spacing: 6px;
+}
+
+// Slightly larger entry padding
+inputbar {
+    padding: 10px 16px;
+}
+
+// Prompt label
+prompt {
+    text-color: @crimson;
+}
