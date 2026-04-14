@@ -5,9 +5,9 @@ update_info=dolphin_detailsmodesettings.upd:rename-leading-padding
 
 [General]
 LockPanels=false
-ShowToolTips=false
 ShowSelectionToggle=false
 ShowStatusBar=2
+ShowToolTips=false
 Version=202
 ViewPropsTimestamp=2023,4,26,16,58,48.324
 
