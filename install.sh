@@ -474,7 +474,7 @@ install_vlc() {
 # Edit hyprland.conf, keybinds.conf, autostart.conf, etc. there.
 install_hyprland() {
     info "Installing Hyprland..."
-    pacman_install hyprland cliphist awww hyprcursor flameshot
+    pacman_install hyprland cliphist awww hyprcursor 
 
     info "Installing rofi (wayland fork)..."
     yay_install rofi-wayland
