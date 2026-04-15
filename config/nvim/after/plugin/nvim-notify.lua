@@ -7,10 +7,12 @@
 -- which causes rendering artefacts in some terminals.
 -- =============================================================================
 
-require("notify").setup({
+require("notify").setup(
+{
     background_colour = "#1e1e2e", -- Catppuccin Mocha base
 })
 
 -- Link the NotifyBackground highlight to Normal so the background is consistent
 -- with the rest of the editor rather than a hardcoded color.
 vim.cmd("highlight link NotifyBackground Normal")
+

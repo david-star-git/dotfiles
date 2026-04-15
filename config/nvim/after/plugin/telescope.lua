@@ -22,3 +22,4 @@ vim.keymap.set("n", "<leader>f", function()
     -- Load the noice extension here so :Noice history is telescope-searchable
     require("telescope").load_extension("noice")
 end)
+

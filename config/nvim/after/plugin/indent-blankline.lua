@@ -8,13 +8,14 @@
 -- Scope highlighting uses treesitter to highlight the current code block's
 -- indent guide in a distinct color.
 -- =============================================================================
-
 -- Initial setup (minimal — options set below)
+
 require("ibl").setup()
 
 -- Rainbow color cycle — one highlight group per indent level.
 -- Colors are from One Dark / a neutral palette that reads well on dark themes.
-local highlight = {
+local highlight =
+{
     "RainbowRed",
     "RainbowYellow",
     "RainbowBlue",
@@ -44,3 +45,4 @@ require("ibl").setup({ scope = { highlight = highlight } })
 
 -- Use treesitter extmarks to determine which scope to highlight.
 hooks.register(hooks.type.SCOPE_HIGHLIGHT, hooks.builtin.scope_highlight_from_extmark)
+

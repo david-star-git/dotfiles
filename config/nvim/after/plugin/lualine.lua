@@ -13,8 +13,10 @@
 -- Refreshes at ~60fps and on all relevant editor events.
 -- =============================================================================
 
-require("lualine").setup({
-    options = {
+require("lualine").setup(
+{
+    options =
+    {
         icons_enabled = true,
         theme = "auto", -- inherits from the active colorscheme
         -- Powerline-style separators matching the tmux theme
@@ -25,12 +27,14 @@ require("lualine").setup({
         always_divide_middle = true,
         always_show_tabline = true,
         globalstatus = false, -- per-window statuslines (not global)
-        refresh = {
+        refresh =
+        {
             statusline = 1000,
             tabline = 1000,
             winbar = 1000,
             refresh_time = 16, -- ~60fps
-            events = {
+            events =
+            {
                 "WinEnter",
                 "BufEnter",
                 "BufWritePost",
@@ -44,7 +48,8 @@ require("lualine").setup({
             },
         },
     },
-    sections = {
+    sections =
+    {
         lualine_a = { "mode" },
         lualine_b = { "branch", "diff", "diagnostics" },
         lualine_c = { "filename" },
@@ -52,7 +57,8 @@ require("lualine").setup({
         lualine_y = { "progress" },
         lualine_z = { "location" },
     },
-    inactive_sections = {
+    inactive_sections =
+    {
         lualine_a = {},
         lualine_b = {},
         lualine_c = { "filename" },
@@ -65,3 +71,4 @@ require("lualine").setup({
     inactive_winbar = {},
     extensions = {},
 })
+

@@ -11,25 +11,27 @@
 --   - LSP progress shown as a small "mini" notification in the corner
 -- =============================================================================
 
-require("noice").setup({
+require("noice").setup(
+{
     -- ── Presets ───────────────────────────────────────────────────────────────
-    presets = {
+    presets =
+    {
         bottom_search = true, -- / and ? use classic bottom cmdline
         command_palette = true, -- : cmdline + popupmenu float together
         long_message_to_split = true, -- :messages over a threshold go to a split
         inc_rename = false, -- we don't use inc-rename.nvim
         lsp_doc_border = false, -- no extra border on hover/signature docs
     },
-
     -- ── Message routing ───────────────────────────────────────────────────────
-    routes = {
+    routes =
+    {
         -- Dismiss mode messages (INSERT, VISUAL, etc.) quickly
         filter = { event = "msg_showmode" },
         opts = { time = 500 },
     },
-
     -- ── Message views ─────────────────────────────────────────────────────────
-    messages = {
+    messages =
+    {
         enabled = true,
         view = "notify", -- normal messages → toast notification
         view_error = "notify", -- errors → toast
@@ -37,18 +39,19 @@ require("noice").setup({
         view_history = "messages", -- :messages → built-in messages view
         view_search = "virtualtext", -- search count → inline virtual text
     },
-
     -- ── Popup menu ────────────────────────────────────────────────────────────
-    popupmenu = {
+    popupmenu =
+    {
         enabled = true,
         backend = "nui", -- nui.nvim renders the completion popup
         kind_icons = {},
     },
-
     -- ── LSP integration ───────────────────────────────────────────────────────
-    lsp = {
+    lsp =
+    {
         -- Show LSP progress (indexing, formatting) as a small corner notification.
-        progress = {
+        progress =
+        {
             enabled = true,
             format = "lsp_progress",
             format_done = "lsp_progress_done",
@@ -56,22 +59,26 @@ require("noice").setup({
             view = "mini",
         },
         -- Don't override markdown rendering — let the LSP handle it directly.
-        override = {
+        override =
+        {
             ["vim.lsp.util.convert_input_to_markdown_lines"] = false,
             ["vim.lsp.util.stylize_markdown"] = false,
             ["cmp.entry.get_documentation"] = false,
         },
         -- Hover docs (K key)
-        hover = {
+        hover =
+        {
             enabled = true,
             silent = false,
             view = nil,
             opts = {},
         },
         -- Signature help — shown automatically when typing function arguments.
-        signature = {
+        signature =
+        {
             enabled = true,
-            auto_open = {
+            auto_open =
+            {
                 enabled = true,
                 trigger = true, -- show on trigger characters (e.g. "(" )
                 luasnip = true,
@@ -81,15 +88,18 @@ require("noice").setup({
             opts = {},
         },
         -- General LSP messages (e.g. server status)
-        message = {
+        message =
+        {
             enabled = true,
             view = "notify",
             opts = {},
         },
         -- Hover and signature doc rendering options
-        documentation = {
+        documentation =
+        {
             view = "hover",
-            opts = {
+            opts =
+            {
                 lang = "markdown",
                 replace = true,
                 render = "plain",
@@ -99,3 +109,4 @@ require("noice").setup({
         },
     },
 })
+

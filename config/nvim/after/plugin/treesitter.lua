@@ -8,9 +8,11 @@
 -- when you open a file of that type.
 -- =============================================================================
 
-require("nvim-treesitter.configs").setup({
+require("nvim-treesitter.configs").setup(
+{
     -- Grammars to always keep installed
-    ensure_installed = {
+    ensure_installed =
+    {
         "javascript",
         "typescript",
         "tsx",
@@ -27,11 +29,10 @@ require("nvim-treesitter.configs").setup({
         "markdown_inline",
         "vue",
     },
-
     sync_install = false, -- install grammars asynchronously
     auto_install = true, -- install missing grammars on first open
-
-    highlight = {
+    highlight =
+    {
         enable = true,
         -- Don't mix treesitter highlighting with the old regex-based syntax —
         -- they conflict and produce ugly results.
@@ -41,7 +42,8 @@ require("nvim-treesitter.configs").setup({
 
 -- nvim-ts-autotag — auto-close/rename HTML tags using the treesitter tree.
 -- filetypes covers HTML, Django templates, and React/Vue JSX.
-require("nvim-ts-autotag").setup({
+require("nvim-ts-autotag").setup(
+{
     enable = true,
     filetypes = { "html", "xml", "javascriptreact", "typescriptreact", "htmldjango" },
 })
@@ -53,3 +55,4 @@ vim.cmd([[
     highlight link htmlTagDelimiter Statement
     highlight link htmlSpecialChar Keyword
 ]])
+

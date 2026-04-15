@@ -20,3 +20,4 @@ vim.keymap.set("n", "<leader>g", ":TestVisit<CR>", { silent = true })
 -- Use vimux to send test output to a tmux pane instead of a new nvim buffer.
 -- This keeps the editor clean and lets you scroll test output freely.
 vim.cmd("let test#strategy = 'vimux'")
+

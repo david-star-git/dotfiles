@@ -7,7 +7,8 @@
 -- Commented-out entries are available — uncomment to add them to the pool.
 -- =============================================================================
 
-local hover_texts = {
+local hover_texts =
+{
     "Yes, this is faster than your IDE",
     "I know exactly what I'm doing (I don't)",
     "Because GUIs are for cowards",
@@ -42,7 +43,8 @@ local hover_texts = {
 math.randomseed(os.time() + vim.fn.getpid())
 local neovim_hover = hover_texts[math.random(#hover_texts)]
 
-require("presence").setup({
+require("presence").setup(
+{
     auto_update = true,
     neovim_image_text = neovim_hover, -- random quote shown on Discord hover
     main_image = "neovim", -- always show the Neovim logo, not file icons
@@ -54,7 +56,6 @@ require("presence").setup({
     buttons = true, -- show repo button if detected
     file_assets = {},
     show_time = true,
-
     -- Activity text
     editing_text = "Editing %s",
     reading_text = "Reading %s",
@@ -64,3 +65,4 @@ require("presence").setup({
     plugin_manager_text = "Managing plugins",
     line_number_text = "Line %s out of %s",
 })
+

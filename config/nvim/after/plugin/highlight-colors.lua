@@ -11,13 +11,13 @@
 
 vim.opt.termguicolors = true
 
-require("nvim-highlight-colors").setup({
+require("nvim-highlight-colors").setup(
+{
     render = "virtual", -- 'background' | 'foreground' | 'virtual'
     virtual_symbol = "■",
     virtual_symbol_prefix = "",
     virtual_symbol_suffix = " ",
     virtual_symbol_position = "inline", -- mimics VS Code style
-
     -- Color format support
     enable_hex = true, -- #FFFFFF
     enable_short_hex = true, -- #fff
@@ -30,14 +30,14 @@ require("nvim-highlight-colors").setup({
     enable_var_usage = true, -- var(--color)
     enable_named_colors = true, -- green, red, etc.
     enable_tailwind = false, -- bg-blue-500 (enable if using Tailwind)
-
     -- Custom color mappings for CSS variables used in this project
-    custom_colors = {
+    custom_colors =
+    {
         { label = "%-%-theme%-primary%-color", color = "#0f1219" },
         { label = "%-%-theme%-secondary%-color", color = "#5a5d64" },
     },
-
     exclude_filetypes = {},
     exclude_buftypes = {},
     exclude_buffer = function(bufnr) end,
 })
+
