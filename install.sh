@@ -14,6 +14,8 @@
 #   config/neomutt/  — goes to ~/.config/neomutt
 #   config/fastfetch/— goes to ~/.config/fastfetch
 #   config/theme/    — Kvantum, GTK configs and .themes
+#   config/hypr/     — goes to ~/.config/hypr
+#   config/eww/      — goes to ~/.config/eww
 #   fonts/           — goes to ~/.fonts
 #
 # All configs are symlinked, never copied, so the repo is always the source
@@ -455,6 +457,101 @@ install_vlc() {
     ok "VLC done"
 }
 
+# --- hyprland ---
+# Installs Hyprland and its supporting compositor stack, then links the
+# hyprland config directory from the repo.
+#
+# Stack:
+#   hyprland  — Wayland compositor
+#   rofi      — application launcher / dmenu replacement (wayland fork via yay)
+#
+# Config lives at: config/hypr/ → ~/.config/hypr
+# Edit hyprland.conf, keybinds.conf, autostart.conf, etc. there.
+install_hyprland() {
+    info "Installing Hyprland..."
+    pacman_install hyprland cliphist awww
+
+    info "Installing rofi (wayland fork)..."
+    yay_install rofi-wayland
+
+    info "Linking hyprland config..."
+    mkdir -p "$ORIGINAL_HOME/.config"
+    link "$SCRIPT_DIR/config/hypr" "$ORIGINAL_HOME/.config/hypr"
+
+    info "Linking wallpapers..."
+    link "$SCRIPT_DIR/wallpapers" "$ORIGINAL_HOME/wallpapers"
+    mkdir -p ~/.cache/awww
+
+    ok "hyprland done"
+}
+
+# --- eww bar ---
+# Installs eww (ElKowars wacky widgets) and the full daemon/service stack
+# required by a typical eww bar setup. Packages that expose a systemd service
+# are enabled immediately so they are available as soon as eww scripts run.
+#
+# Stack:
+#   eww                    — widget daemon (AUR)
+#   pipewire               — audio server (+ wireplumber session manager)
+#   xdg-desktop-portal-hyprland — screen-share / portal backend for Hyprland
+#   networkmanager         — network management daemon
+#   modemmanager           — mobile broadband support
+#   bluez                  — Bluetooth stack
+#   power-profiles-daemon  — CPU power-profile switching (performance/balanced/saver)
+#   brightnessctl          — backlight control (no root required)
+#   mako                   — Wayland notification daemon
+#   rfkill                 — enable/disable wireless devices
+#   tor                    — anonymising proxy (scripts may query its status)
+#   jq                     — JSON processor used by bar scripts
+#   socat                  — socket relay used by bar scripts
+#   vnstat                 — network traffic statistics daemon
+#
+# Config lives at: config/eww/ → ~/.config/eww
+# Typical layout: eww.yuck, eww.scss, scripts/
+install_eww() {
+    info "Installing eww bar stack..."
+
+    info "Installing eww (AUR)..."
+    yay_install eww
+
+    info "Installing pacman packages..."
+    pacman_install \
+        pipewire pipewire-pulse wireplumber \
+        xdg-desktop-portal-hyprland \
+        networkmanager modemmanager \
+        bluez bluez-utils \
+        power-profiles-daemon \
+        brightnessctl \
+        mako \
+        rfkill \
+        tor \
+        jq socat \
+        vnstat
+
+    info "Enabling systemd services..."
+    # Enable services that need to be running for eww scripts to query them.
+    # NetworkManager and ModemManager handle connection state.
+    # vnstatd accumulates traffic stats — must be running to produce data.
+    # power-profiles-daemon exposes the D-Bus interface bar scripts call.
+    # bluetooth is enabled here but leave the radio off by default (rfkill).
+    for svc in \
+        NetworkManager \
+        ModemManager \
+        bluetooth \
+        power-profiles-daemon \
+        vnstat; do
+        sudo systemctl enable --now "$svc" \
+            && ok "Enabled $svc" \
+            || warn "Could not enable $svc — may not be installed or already running"
+    done
+
+    info "Linking eww config..."
+    mkdir -p "$ORIGINAL_HOME/.config"
+    link "$SCRIPT_DIR/config/eww" "$ORIGINAL_HOME/.config/eww"
+
+    ok "eww bar done"
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -469,6 +566,8 @@ main() {
         "nvim:neovim + packer + plugins:on" \
         "tmux:tmux + TPM:on" \
         "kitty:kitty terminal:on" \
+        "hyprland:Hyprland compositor + rofi:off" \
+        "eww:eww bar + full widget stack:off" \
         "neomutt:neomutt + full mail stack:off" \
         "theme:Kvantum + GTK + fonts:on" \
         "security:UFW + sysctl + Tor:off" \
@@ -489,6 +588,8 @@ main() {
     [[ "$selected" == *"nvim"*      ]] && install_nvim
     [[ "$selected" == *"tmux"*      ]] && install_tmux
     [[ "$selected" == *"kitty"*     ]] && install_kitty
+    [[ "$selected" == *"hyprland"*  ]] && install_hyprland
+    [[ "$selected" == *"eww"*       ]] && install_eww
     [[ "$selected" == *"neomutt"*   ]] && install_neomutt
     [[ "$selected" == *"theme"*     ]] && install_theme
     [[ "$selected" == *"security"*  ]] && install_security
