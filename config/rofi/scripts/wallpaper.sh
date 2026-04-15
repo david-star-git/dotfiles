@@ -7,7 +7,7 @@
 #   wallpaper.sh --restore  — silently restore last set wallpaper (for autostart)
 #
 # Dependencies:
-#   swww        — animated wallpaper daemon (install via yay: yay -S swww)
+#   awww        — animated wallpaper daemon
 #   rofi        — picker UI
 #
 # State file: ~/.cache/hypr/wallpaper
@@ -18,32 +18,16 @@
 #   Place any image (png/jpg/jpeg/webp/gif) there — the script finds them all.
 # =============================================================================
 
-WALLPAPER_DIR="$HOME/wallpapers"
+WALLPAPER_DIR="$(realpath "$HOME/wallpapers")"
 STATE_FILE="$HOME/.cache/hypr/wallpaper"
 ROFI_THEME="$HOME/.config/rofi/wallpaper.rasi"
 
 # Supported extensions (case-insensitive via find)
 EXTS=( png jpg jpeg webp gif )
 
-# swww transition settings — smooth fade
-SWWW_OPTS=(
-    --transition-type  fade
-    --transition-fps   60
-    --transition-step  90
-    --transition-duration 0.8
-)
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 die() { echo "wallpaper.sh: $*" >&2; exit 1; }
-
-# Ensure swww daemon is running before setting a wallpaper
-ensure_daemon() {
-    if ! swww query &>/dev/null; then
-        swww init &
-        sleep 0.5   # give daemon a moment to initialise
-    fi
-}
 
 # Write chosen path to state file
 save_state() {
@@ -55,8 +39,7 @@ save_state() {
 apply_wallpaper() {
     local path="$1"
     [ -f "$path" ] || die "File not found: $path"
-    ensure_daemon
-    swww img "$path" "${SWWW_OPTS[@]}"
+    awww img "$path" --transition-step 15 --transition-fps 60 --transition-type fade
     save_state "$path"
 }
 
@@ -104,7 +87,7 @@ done
 
 chosen=$(printf '%s\n' "${files[@]}" | rofi \
     -dmenu \
-    -p "󰏘  Wallpaper" \
+    -p "Wallpaper" \
     -no-default-config \
     -config "$ROFI_THEME" \
     -selected-row "$selected_row" \

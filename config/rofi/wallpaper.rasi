@@ -157,7 +157,7 @@ element-text {
     text-color:       inherit;
     font:             "SF Pro Display 13";
     vertical-align:   0.5;
-    highlight:        bold @crimson;
+    highlight:        @crimson;
 }
 
 // - Message (shown on no results) ----------------------
