@@ -364,13 +364,18 @@ install_neomutt() {
 # to register new fonts immediately without a logout.
 install_theme() {
     info "Installing theme..."
-    pacman_install kvantum
+    pacman_install kvantum qt6ct nwg-look
     mkdir -p "$ORIGINAL_HOME/.config"
-    link "$SCRIPT_DIR/config/theme/Kvantum" "$ORIGINAL_HOME/.config/Kvantum"
-    link "$SCRIPT_DIR/config/theme/gtk-3.0" "$ORIGINAL_HOME/.config/gtk-3.0"
-    link "$SCRIPT_DIR/config/theme/gtk-4.0" "$ORIGINAL_HOME/.config/gtk-4.0"
-    link "$SCRIPT_DIR/config/theme/.themes" "$ORIGINAL_HOME/.themes"
-    link "$SCRIPT_DIR/fonts"                "$ORIGINAL_HOME/.fonts"
+    link "$SCRIPT_DIR/config/theme/Kvantum"        "$ORIGINAL_HOME/.config/Kvantum"
+    link "$SCRIPT_DIR/config/theme/gtk-3.0"        "$ORIGINAL_HOME/.config/gtk-3.0"
+    link "$SCRIPT_DIR/config/theme/gtk-4.0"        "$ORIGINAL_HOME/.config/gtk-4.0"
+    link "$SCRIPT_DIR/config/theme/qt6ct"          "$ORIGINAL_HOME/.config/qt6ct"
+    link "$SCRIPT_DIR/config/theme/.themes"        "$ORIGINAL_HOME/.themes"
+    link "$SCRIPT_DIR/fonts"                       "$ORIGINAL_HOME/.fonts"
+    link "$SCRIPT_DIR/config/theme/gtkrc"          "$ORIGINAL_HOME/gtkrc"
+    link "$SCRIPT_DIR/config/theme/gtkrc-2.0"      "$ORIGINAL_HOME/gtkrc-2.0"
+    link "$SCRIPT_DIR/config/theme/Sweet-cursors"  "$ORIGINAL_HOME/.icons/Sweet-cursors"
+    link "$SCRIPT_DIR/config/theme/xsettingsd"     "$ORIGINAL_HOME/.config/xsettingsd"
     info "Refreshing font cache..."
     fc-cache -f "$ORIGINAL_HOME/.fonts"
     ok "theme done"
@@ -469,7 +474,7 @@ install_vlc() {
 # Edit hyprland.conf, keybinds.conf, autostart.conf, etc. there.
 install_hyprland() {
     info "Installing Hyprland..."
-    pacman_install hyprland cliphist awww
+    pacman_install hyprland cliphist awww hyprcursor flameshot
 
     info "Installing rofi (wayland fork)..."
     yay_install rofi-wayland
@@ -481,6 +486,8 @@ install_hyprland() {
     info "Linking wallpapers..."
     link "$SCRIPT_DIR/wallpapers" "$ORIGINAL_HOME/wallpapers"
     mkdir -p ~/.cache/awww
+
+    mkdir -p ~/Pictures
 
     ok "hyprland done"
 }
