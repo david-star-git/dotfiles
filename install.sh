@@ -376,6 +376,8 @@ install_theme() {
     link "$SCRIPT_DIR/config/theme/gtkrc-2.0"      "$ORIGINAL_HOME/gtkrc-2.0"
     link "$SCRIPT_DIR/config/theme/Sweet-cursors"  "$ORIGINAL_HOME/.icons/Sweet-cursors"
     link "$SCRIPT_DIR/config/theme/xsettingsd"     "$ORIGINAL_HOME/.config/xsettingsd"
+    link "$SCRIPT_DIR/config/theme/environment.d"  "$ORIGINAL_HOME/.config/environment.d"
+    link "$SCRIPT_DIR/config/theme/qt6ct"          "$ORIGINAL_HOME/.config/qt6ct"
     info "Refreshing font cache..."
     fc-cache -f "$ORIGINAL_HOME/.fonts"
     ok "theme done"
