@@ -369,13 +369,8 @@ install_theme() {
     link "$SCRIPT_DIR/config/theme/Kvantum"        "$ORIGINAL_HOME/.config/Kvantum"
     link "$SCRIPT_DIR/config/theme/gtk-3.0"        "$ORIGINAL_HOME/.config/gtk-3.0"
     link "$SCRIPT_DIR/config/theme/gtk-4.0"        "$ORIGINAL_HOME/.config/gtk-4.0"
-    link "$SCRIPT_DIR/config/theme/qt6ct"          "$ORIGINAL_HOME/.config/qt6ct"
-    link "$SCRIPT_DIR/config/theme/.themes"        "$ORIGINAL_HOME/.themes"
     link "$SCRIPT_DIR/fonts"                       "$ORIGINAL_HOME/.fonts"
-    link "$SCRIPT_DIR/config/theme/gtkrc"          "$ORIGINAL_HOME/gtkrc"
-    link "$SCRIPT_DIR/config/theme/gtkrc-2.0"      "$ORIGINAL_HOME/gtkrc-2.0"
     link "$SCRIPT_DIR/config/theme/Sweet-cursors"  "$ORIGINAL_HOME/.icons/Sweet-cursors"
-    link "$SCRIPT_DIR/config/theme/xsettingsd"     "$ORIGINAL_HOME/.config/xsettingsd"
     link "$SCRIPT_DIR/config/theme/environment.d"  "$ORIGINAL_HOME/.config/environment.d"
     link "$SCRIPT_DIR/config/theme/qt6ct"          "$ORIGINAL_HOME/.config/qt6ct"
     info "Refreshing font cache..."
@@ -518,13 +513,14 @@ install_hyprland() {
 # Config lives at: config/eww/ → ~/.config/eww
 # Typical layout: eww.yuck, eww.scss, scripts/
 install_eww() {
-    info "Installing eww bar stack..."
+    info "Installing waybar bar stack..."
 
     info "Installing eww (AUR)..."
     yay_install eww
 
     info "Installing pacman packages..."
     pacman_install \
+        waybar \
         pipewire pipewire-pulse wireplumber \
         xdg-desktop-portal-hyprland \
         networkmanager modemmanager \
@@ -557,6 +553,7 @@ install_eww() {
     info "Linking eww config..."
     mkdir -p "$ORIGINAL_HOME/.config"
     link "$SCRIPT_DIR/config/eww" "$ORIGINAL_HOME/.config/eww"
+    link "$SCRIPT_DIR/config/waybar" "$ORIGINAL_HOME/.config/waybar"
 
     ok "eww bar done"
 }
