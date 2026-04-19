@@ -1,179 +1,177 @@
 #!/usr/bin/env python3
 """
-launch-audio.py - volume popup with per-app stream control
-Requires: python-gobject, gtk-layer-shell, pamixer, pactl (pipewire-pulse)
-Run once to open, run again to close (toggle).
-Click outside the popup to close it.
-Press Escape to close.
+launch-audio.py - volume popup with per-app stream control (GTK4 port)
+Requires: python-gobject, gtk4-layer-shell, pamixer, pactl
+
+Install gtk4-layer-shell (Arch):
+    sudo pacman -S gtk4-layer-shell
+
+For blur, add to your Hyprland config:
+    layerrule = blur, namespace:audio-popup
+    layerrule = ignorezero, namespace:audio-popup
 """
 
-import gi, subprocess, re, json, os, signal, sys
-gi.require_version("Gtk", "3.0")
-gi.require_version("GtkLayerShell", "0.1")
-from gi.repository import Gtk, Gdk, GLib, GtkLayerShell
+import gi, subprocess, re, os, signal, sys, time
 
-# ── Position config ───────────────────────────────────────────────────────────
-# Set these to the coords reported by `hyprctl cursorpos` while hovering
-# the center of the Waybar audio button.
-WIDGET_WIDTH = 280
-TARGET_CENTER_X = 2217  # horizontal center of popup top edge
-TARGET_TOP_Y = 0  # vertical top edge of popup (= bar bottom)
+# ── gtk4-layer-shell linking fix ───────────────────────────────────────────────
+_LS_LIB   = "libgtk4-layer-shell.so"
+_LS_CACHE = os.path.expanduser("~/.cache/gtk4-layer-shell-path")
 
+if _LS_LIB not in os.environ.get("LD_PRELOAD", ""):
+    _sopath = None
+    if os.path.exists(_LS_CACHE):
+        _sopath = open(_LS_CACHE).read().strip() or None
+    if not _sopath:
+        try:
+            for line in subprocess.run(
+                ["ldconfig", "-p"], capture_output=True, text=True
+            ).stdout.splitlines():
+                if "libgtk4-layer-shell" in line and "=>" in line:
+                    _sopath = line.split("=>")[-1].strip()
+                    os.makedirs(os.path.dirname(_LS_CACHE), exist_ok=True)
+                    open(_LS_CACHE, "w").write(_sopath)
+                    break
+        except Exception:
+            pass
+    if _sopath:
+        os.environ["LD_PRELOAD"] = (
+            _sopath + ":" + os.environ.get("LD_PRELOAD", "")
+        ).strip(":")
+        os.execv(sys.executable, [sys.executable] + sys.argv)
 
-# ── Compute right margin from monitor geometry ────────────────────────────────
-def _get_right_margin():
-    try:
-        mons = json.loads(
-            subprocess.run(
-                ["hyprctl", "monitors", "-j"], capture_output=True, text=True
-            ).stdout
-            or "[]"
-        )
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gtk4LayerShell", "1.0")
+from gi.repository import Gtk, Gdk, GLib, Gtk4LayerShell
 
-        for m in mons:
-            if m["x"] <= TARGET_CENTER_X < m["x"] + m["width"]:
-                monitor_right = m["x"] + m["width"]
-                return monitor_right - (TARGET_CENTER_X + WIDGET_WIDTH // 2)
-    except Exception:
-        pass
-    return 10  # safe fallback
-RIGHT_MARGIN = _get_right_margin()
-TOP_MARGIN = TARGET_TOP_Y
+WIDGET_WIDTH    = 280
+TARGET_CENTER_X = 2217
+TARGET_TOP_Y    = 3
+C_BG      = "rgba(17, 17, 27, 0.90)"
+C_SURFACE = "#1e1e2e"
+C_TEXT    = "#cdd6f4"
+C_ACCENT  = "#c0415a"
 
-# ── CSS ───────────────────────────────────────────────────────────────────────
-CSS = """
-* { transition: none; }
-window {
-    background-color: #11111b;
-    border: 2px solid #c0415a;
+STREAM_LINGER_S  = 120
+DRAG_SETTLE_MS   = 500
+REVEAL_DURATION  = 150   # ms for the slide-down animation
+
+# Cache file for right margin so hyprctl only runs once ever per monitor config
+_MARGIN_CACHE = os.path.expanduser("~/.cache/audio-popup-margin")
+
+CSS = f"""
+* {{ outline: none; box-shadow: none; }}
+window {{
+    background-color: {C_BG};
+    border: 2px solid {C_ACCENT};
     border-radius: 5px;
-}
-
-#header {
-    padding: 14px 16px 10px 16px;
-    border-bottom: 1px solid #1e1e2e;
-}
-
-#footer {
-    padding: 8px 16px 12px 16px;
-    border-top: 1px solid #1e1e2e;
-}
-
-/* ── Master ── */
-#master-label {
-    color: #c0415a;
-    font-family: monospace;
-    font-size: 11px;
-    font-weight: bold;
-    letter-spacing: 1px;
-}
-
-#master-pct {
-    color: #c0415a;
-    font-family: monospace;
-    font-size: 13px;
-    font-weight: bold;
-    min-width: 44px;
-}
-
-/* ── Dropdown toggle ── */
-#streams-toggle {
-    background: transparent;
-    color: #6c7086;
-    border: none;
-    border-radius: 0;
-    border-top: 1px solid #1e1e2e;
-    padding: 5px 16px;
-    font-family: monospace;
-    font-size: 10px;
-    letter-spacing: 1px;
-}
-
-#streams-toggle:hover { color: #cdd6f4; background: #1e1e2e; }
-/* ── App rows ── */
-#streams-box { padding: 6px 0; border-bottom: 1px solid #1e1e2e; }
-.app-row     { padding: 4px 16px; }
-.app-name    { color: #a6adc8; font-family: monospace; font-size: 10px; min-width: 90px; }
-.app-pct     { color: #6c7086; font-family: monospace; font-size: 10px; min-width: 36px; }
-/* ── Mute buttons ── */
-.mute-btn {
-    background: transparent;
-    color: #6c7086;
-    border: none;
-    border-radius: 4px;
-    padding: 2px 5px;
-    font-size: 12px;
-    min-width: 0;
-    min-height: 0;
-}
-
-.mute-btn:hover { background: #1e1e2e; color: #cdd6f4; }
-.mute-btn.muted { color: #c0415a; }
-/* ── Sink label ── */
-#sink-name { color: #45475a; font-family: monospace; font-size: 9px; }
-/* ── Master slider (crimson) ── */
-#master-slider trough    { background-color: #313244; border-radius: 3px; min-height: 4px; }
-#master-slider highlight { background-color: #c0415a; border-radius: 3px; }
-#master-slider slider    {
-    background-color: #1e1e2e;
-    border-radius: 50%;
-    min-width: 12px; min-height: 12px;
-    border: 2px solid #c0415a;
-    box-shadow: none;
-}
-
-/* ── App sliders (subtle) ── */
-.app-slider trough    { background-color: #1e1e2e; border-radius: 3px; min-height: 3px; }
-.app-slider highlight { background-color: #45475a; border-radius: 3px; }
-.app-slider slider    {
-    background-color: #585b70;
-    border-radius: 50%;
-    min-width: 10px; min-height: 10px;
-    border: none; box-shadow: none;
-}
-
-.app-slider slider:hover { background-color: #cdd6f4; }
+}}
+#header {{ padding: 12px 14px 10px 14px; }}
+#master-label {{
+    color: {C_TEXT}; font-family: monospace; font-size: 11px;
+    font-weight: bold; letter-spacing: 1px;
+}}
+#master-pct {{
+    color: {C_ACCENT}; font-family: monospace; font-size: 12px;
+    font-weight: bold; min-width: 40px;
+}}
+button {{
+    background-color: transparent; background-image: none;
+    border: none; box-shadow: none; outline: none;
+    padding: 0; margin: 0; min-width: 0; min-height: 0; border-radius: 4px;
+}}
+button:hover  {{ background-color: {C_SURFACE}; background-image: none; }}
+button:active {{ background-color: transparent; background-image: none; }}
+.mute-btn             {{ color: {C_TEXT};   font-size: 13px; padding: 2px 5px; }}
+.mute-btn:hover       {{ color: {C_TEXT};   }}
+.mute-btn.muted       {{ color: {C_ACCENT}; }}
+.mute-btn.muted:hover {{ color: {C_ACCENT}; }}
+#divider-row {{ padding: 0 6px; }}
+#divider-line {{
+    background-color: {C_ACCENT}; min-height: 1px;
+    margin-top: 7px; margin-bottom: 7px;
+}}
+#arrow-btn        {{ color: {C_ACCENT}; font-size: 9px; padding: 0 6px; background: transparent; }}
+#arrow-btn:hover,
+#arrow-btn:active {{ color: {C_ACCENT}; background: transparent; }}
+revealer > * {{ padding: 0; margin: 0; }}
+#streams-box {{ padding: 4px 0 6px 0; border-top: 1px solid {C_SURFACE}; }}
+.app-row  {{ padding: 3px 14px; }}
+.app-name {{ color: {C_TEXT};   font-family: monospace; font-size: 10px; }}
+.app-pct  {{ color: {C_ACCENT}; font-family: monospace; font-size: 10px; min-width: 34px; }}
+.linger   {{ opacity: 0.4; }}
+#footer    {{ padding: 6px 14px 10px 14px; border-top: 1px solid {C_SURFACE}; }}
+#sink-name {{ color: {C_TEXT}; font-family: monospace; font-size: 9px; opacity: 0.5; }}
+scale {{ padding: 6px 0; outline: none; box-shadow: none; }}
+scale trough {{
+    min-height: 2px; border-radius: 2px; border: none;
+    padding: 0; margin: 0; background-color: {C_SURFACE};
+    outline: none; box-shadow: none;
+}}
+scale trough highlight {{ background-color: {C_ACCENT}; border-radius: 2px; }}
+scale slider {{
+    background-color: {C_SURFACE}; border-radius: 50%;
+    min-width: 8px; min-height: 8px;
+    border: 1px solid {C_ACCENT}; outline: none; box-shadow: none;
+}}
+scale slider:hover   {{ background-color: {C_TEXT}; }}
+scale:focus trough,
+scale:focus slider   {{ outline: none; box-shadow: none; }}
 """
 
+_loop = GLib.MainLoop()
 
-# ── pactl helpers ─────────────────────────────────────────────────────────────
+
+# ── Pure-Python process check (no pgrep subprocess) ───────────────────────────
+def _find_existing_pids():
+    """Return PIDs of other instances of this script without spawning pgrep."""
+    mypid   = os.getpid()
+    script  = os.path.basename(__file__)
+    results = []
+    try:
+        for entry in os.scandir("/proc"):
+            if not entry.name.isdigit():
+                continue
+            pid = int(entry.name)
+            if pid == mypid:
+                continue
+            try:
+                cmdline = open(f"/proc/{pid}/cmdline").read().replace("\0", " ")
+                if script in cmdline:
+                    results.append(pid)
+            except OSError:
+                pass
+    except OSError:
+        pass
+    return results
+
+
+# ── Audio helpers ──────────────────────────────────────────────────────────────
 def run(cmd):
     return subprocess.run(cmd, capture_output=True, text=True).stdout.strip()
-
 
 def get_volume():
     v = run(["pamixer", "--get-volume"])
     return int(v) if v.isdigit() else 0
 
-
 def get_muted():
     return run(["pamixer", "--get-mute"]) == "true"
-
 
 def set_volume(v):
     subprocess.run(["pamixer", "--set-volume", str(int(v))])
 
-
 def toggle_mute():
     subprocess.run(["pamixer", "--toggle-mute"])
-
 
 def get_sink_name():
     n = run(["pactl", "get-default-sink"])
     return n.split(".")[-1][:32] if n else "unknown"
 
-
 def vol_icon(vol, muted):
-    if muted:
-        return "󰝟"
-    if vol == 0:
-        return "󰝦"
-    if vol < 33:
-        return "󰕿"
-    if vol < 66:
-        return "󰖀"
+    if muted:    return "󰝟"
+    if vol == 0: return "󰝦"
+    if vol < 33: return "󰕿"
+    if vol < 66: return "󰖀"
     return "󰕾"
-
 
 def get_sink_inputs():
     out = run(["pactl", "list", "sink-inputs"])
@@ -184,13 +182,7 @@ def get_sink_inputs():
         if m:
             if current:
                 inputs.append(current)
-            current = {
-                "index": m.group(1),
-                "name": "Unknown",
-                "vol": 100,
-                "muted": False,
-            }
-
+            current = {"index": m.group(1), "name": "Unknown", "vol": 100, "muted": False}
             continue
         if not current:
             continue
@@ -199,7 +191,7 @@ def get_sink_inputs():
         elif line.startswith("Volume:"):
             pct = re.search(r"(\d+)%", line)
             if pct:
-                current["vol"] = int(pct.group(1))
+                current["vol"] = min(int(pct.group(1)), 100)
         elif "application.name" in line:
             val = re.search(r'"([^"]+)"', line)
             if val:
@@ -212,284 +204,384 @@ def get_sink_inputs():
         inputs.append(current)
     return inputs
 
-
 def set_input_volume(index, vol):
     subprocess.run(["pactl", "set-sink-input-volume", str(index), f"{int(vol)}%"])
-
 
 def toggle_input_mute(index):
     subprocess.run(["pactl", "set-sink-input-mute", str(index), "toggle"])
 
+def get_right_margin():
+    """Return right margin, using a cache file to avoid hyprctl on every launch."""
+    if os.path.exists(_MARGIN_CACHE):
+        try:
+            return int(open(_MARGIN_CACHE).read().strip())
+        except ValueError:
+            pass
+    try:
+        import json
+        mons = json.loads(run(["hyprctl", "monitors", "-j"]) or "[]")
+        for m in mons:
+            if m["x"] <= TARGET_CENTER_X < m["x"] + m["width"]:
+                rm = (m["x"] + m["width"]) - (TARGET_CENTER_X + WIDGET_WIDTH // 2)
+                os.makedirs(os.path.dirname(_MARGIN_CACHE) or ".", exist_ok=True)
+                open(_MARGIN_CACHE, "w").write(str(rm))
+                return rm
+    except Exception:
+        pass
+    return 10
 
-# ── Transparent fullscreen click-catcher (closes popup on outside click) ──────
-class Backdrop(Gtk.Window):
+def make_slider(max_val=100):
+    adj = Gtk.Adjustment(value=0, lower=0, upper=max_val,
+                         step_increment=1, page_increment=10, page_size=0)
+    s = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, adjustment=adj)
+    s.set_draw_value(False)
+    s.set_hexpand(True)
+    s.set_can_focus(False)
+    # GTK4 programmatic cursor — CSS cursor: is unreliable on Wayland
+    s.set_cursor(Gdk.Cursor.new_from_name("ew-resize", None))
+    return s
 
-    def __init__(self, on_click):
-        super().__init__(type=Gtk.WindowType.TOPLEVEL)
-        self.set_decorated(False)
-        self.set_app_paintable(True)
-        screen = self.get_screen()
-        visual = screen.get_rgba_visual()
-        if visual:
-            self.set_visual(visual)
-        GtkLayerShell.init_for_window(self)
-        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
-        for edge in (
-            GtkLayerShell.Edge.TOP,
-            GtkLayerShell.Edge.BOTTOM,
-            GtkLayerShell.Edge.LEFT,
-            GtkLayerShell.Edge.RIGHT,
-        ):
-            GtkLayerShell.set_anchor(self, edge, True)
-        GtkLayerShell.set_exclusive_zone(self, -1)
-        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        self.connect("button-press-event", lambda *_: on_click())
-        self.connect("draw", self._on_draw)
-
-    def _on_draw(self, _widget, cr):
-        cr.set_source_rgba(0, 0, 0, 0)
-        cr.set_operator(1)  # cairo.OPERATOR_SOURCE
-        cr.paint()
-        return False
+def apply_css():
+    provider = Gtk.CssProvider()
+    provider.load_from_string(CSS)
+    Gtk.StyleContext.add_provider_for_display(
+        Gdk.Display.get_default(),
+        provider,
+        Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+    )
 
 
-# ── Main popup ────────────────────────────────────────────────────────────────
+# ── Popup ──────────────────────────────────────────────────────────────────────
 class VolumePopup(Gtk.Window):
 
     def __init__(self):
-        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        super().__init__()
         self.set_decorated(False)
         self.set_resizable(False)
         self.set_default_size(WIDGET_WIDTH, -1)
 
-        # Layer shell - OVERLAY so it renders above the backdrop (TOP)
-        GtkLayerShell.init_for_window(self)
-        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
-        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
-        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
-        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, TOP_MARGIN)
-        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.RIGHT, RIGHT_MARGIN)
-        GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.ON_DEMAND)
+        Gtk4LayerShell.init_for_window(self)
+        Gtk4LayerShell.set_namespace(self, "audio-popup")
+        Gtk4LayerShell.set_layer(self, Gtk4LayerShell.Layer.OVERLAY)
+        Gtk4LayerShell.set_anchor(self, Gtk4LayerShell.Edge.TOP,   True)
+        Gtk4LayerShell.set_anchor(self, Gtk4LayerShell.Edge.RIGHT, True)
+        Gtk4LayerShell.set_margin(self, Gtk4LayerShell.Edge.TOP,   TARGET_TOP_Y)
+        Gtk4LayerShell.set_margin(self, Gtk4LayerShell.Edge.RIGHT, get_right_margin())
+        Gtk4LayerShell.set_keyboard_mode(self, Gtk4LayerShell.KeyboardMode.ON_DEMAND)
 
-        provider = Gtk.CssProvider()
-        provider.load_from_data(CSS.encode("utf-8"))
-        Gtk.StyleContext.add_provider_for_screen(
-            Gdk.Screen.get_default(),
-            provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
-        )
+        self._linger:        dict[str, float] = {}
+        self._dragging:      dict[str, bool]  = {}
+        self._settle_source: dict[str, int]   = {}
+        self._input_muted:   dict[str, bool]  = {}
+        self._mvol   = 0
+        self._mmuted = False
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.add(root)
+        self.set_child(root)
 
-        # ── Header: master volume ─────────────────────────────────────────────
+        # ── Header ────────────────────────────────────────────────────────────
         header = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         header.set_name("header")
-        root.pack_start(header, False, False, 0)
-        label_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        header.pack_start(label_row, False, False, 0)
-        self._master_muted = get_muted()
-        self._master_vol = get_volume()
-        self.master_icon = Gtk.Button(
-            label=vol_icon(self._master_vol, self._master_muted)
-        )
+        root.append(header)
 
-        self.master_icon.get_style_context().add_class("mute-btn")
-        if self._master_muted:
-            self.master_icon.get_style_context().add_class("muted")
-        self.master_icon.connect("clicked", self._on_master_mute)
-        label_row.pack_start(self.master_icon, False, False, 0)
+        top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        header.append(top_row)
+
+        self.mute_btn = Gtk.Button(label=vol_icon(0, False))
+        self.mute_btn.add_css_class("mute-btn")
+        self.mute_btn.set_can_focus(False)
+        self.mute_btn.set_cursor(Gdk.Cursor.new_from_name("pointer", None))
+        self.mute_btn.connect("clicked", self._on_master_mute)
+        top_row.append(self.mute_btn)
+
         lbl = Gtk.Label(label="MASTER")
         lbl.set_name("master-label")
         lbl.set_xalign(0)
-        label_row.pack_start(lbl, True, True, 0)
-        self.master_pct = Gtk.Label(label=f"{self._master_vol}%")
+        lbl.set_hexpand(True)
+        top_row.append(lbl)
+
+        self.master_pct = Gtk.Label(label="…")
         self.master_pct.set_name("master-pct")
         self.master_pct.set_xalign(1)
-        label_row.pack_start(self.master_pct, False, False, 0)
-        self.master_slider = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL, 0, 100, 1
-        )
+        top_row.append(self.master_pct)
 
-        self.master_slider.set_name("master-slider")
-        self.master_slider.set_value(self._master_vol)
-        self.master_slider.set_draw_value(False)
-        self.master_slider.set_hexpand(True)
+        self.master_slider = make_slider()
         self.master_slider.connect("value-changed", self._on_master_slider)
+        header.append(self.master_slider)
 
-        header.pack_start(self.master_slider, False, False, 0)
-
-        # ── Streams dropdown toggle ───────────────────────────────────────────
+        # ── Divider ───────────────────────────────────────────────────────────
         self._streams_open = False
-        self.toggle_btn = Gtk.Button(label="APPLICATIONS  ▸")
-        self.toggle_btn.set_name("streams-toggle")
-        self.toggle_btn.set_relief(Gtk.ReliefStyle.NONE)
-        self.toggle_btn.connect("clicked", self._toggle_streams)
+        divider_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        divider_row.set_name("divider-row")
+        root.append(divider_row)
 
-        root.pack_start(self.toggle_btn, False, False, 0)
+        left_line = Gtk.Box()
+        left_line.set_name("divider-line")
+        left_line.set_hexpand(True)
+        left_line.set_valign(Gtk.Align.CENTER)
+        divider_row.append(left_line)
 
-        # ── Streams list (hidden by default) ─────────────────────────────────
+        self.arrow_btn = Gtk.Button(label="▼")
+        self.arrow_btn.set_name("arrow-btn")
+        self.arrow_btn.set_can_focus(False)
+        self.arrow_btn.set_cursor(Gdk.Cursor.new_from_name("pointer", None))
+        self.arrow_btn.connect("clicked", self._toggle_streams)
+        divider_row.append(self.arrow_btn)
+
+        right_line = Gtk.Box()
+        right_line.set_name("divider-line")
+        right_line.set_hexpand(True)
+        right_line.set_valign(Gtk.Align.CENTER)
+        divider_row.append(right_line)
+
+        # ── Streams revealer (SLIDE_DOWN = grows downward, no layout jump) ───
+        self.revealer = Gtk.Revealer()
+        self.revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+        self.revealer.set_transition_duration(REVEAL_DURATION)
+        self.revealer.set_reveal_child(False)
+        root.append(self.revealer)
+
         self.streams_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         self.streams_box.set_name("streams-box")
-        self.streams_box.set_visible(False)
-        self.streams_box.set_no_show_all(True)
+        self.revealer.set_child(self.streams_box)
 
-        root.pack_start(self.streams_box, False, False, 0)
-
-        # ── Footer: sink name ─────────────────────────────────────────────────
+        # ── Footer ────────────────────────────────────────────────────────────
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         footer.set_name("footer")
-        root.pack_start(footer, False, False, 0)
-        sink_lbl = Gtk.Label(label=f"{get_sink_name()}")
-        sink_lbl.set_name("sink-name")
-        sink_lbl.set_xalign(0)
-        footer.pack_start(sink_lbl, True, True, 0)
+        root.append(footer)
+
+        self.sink_lbl = Gtk.Label(label="…")
+        self.sink_lbl.set_name("sink-name")
+        self.sink_lbl.set_xalign(0)
+        self.sink_lbl.set_hexpand(True)
+        footer.append(self.sink_lbl)
+
+        key_ctrl = Gtk.EventControllerKey.new()
+        key_ctrl.connect("key-pressed", self._on_key)
+        self.add_controller(key_ctrl)
+
+        # Defer all blocking audio queries until after first frame
+        GLib.idle_add(self._init_audio)
+
+    def _init_audio(self):
+        self._mvol   = get_volume()
+        self._mmuted = get_muted()
+        self.master_pct.set_text(f"{self._mvol}%")
+        self.mute_btn.set_label(vol_icon(self._mvol, self._mmuted))
+        if self._mmuted:
+            self.mute_btn.add_css_class("muted")
+        self.master_slider.handler_block_by_func(self._on_master_slider)
+        self.master_slider.get_adjustment().set_value(self._mvol)
+        self.master_slider.handler_unblock_by_func(self._on_master_slider)
+        self.sink_lbl.set_text(get_sink_name())
         GLib.timeout_add(2000, self._refresh_streams)
-        self.connect("key-press-event", self._on_key)
+        return False
 
     # ── Streams ───────────────────────────────────────────────────────────────
     def _toggle_streams(self, _):
         self._streams_open = not self._streams_open
+        self.arrow_btn.set_label("▲" if self._streams_open else "▼")
         if self._streams_open:
             self._build_streams()
-            self.streams_box.set_visible(True)
-            self.toggle_btn.set_label("APPLICATIONS  ▾")
-        else:
-            self.streams_box.set_visible(False)
-            self.toggle_btn.set_label("APPLICATIONS  ▸")
-        self.resize(1, 1)
+        # Revealer slides smoothly — no resize jump
+        self.revealer.set_reveal_child(self._streams_open)
+
+    def _iter_stream_rows(self):
+        child = self.streams_box.get_first_child()
+        while child:
+            yield child
+            child = child.get_next_sibling()
 
     def _build_streams(self):
-        for child in self.streams_box.get_children():
-            self.streams_box.remove(child)
-        inputs = get_sink_inputs()
-        if not inputs:
-            empty = Gtk.Label(label="No active streams")
-            empty.get_style_context().add_class("app-name")
-            empty.set_margin_top(6)
-            empty.set_margin_bottom(6)
+        now  = time.monotonic()
+        live = {inp["index"]: inp for inp in get_sink_inputs()}
 
-            self.streams_box.pack_start(empty, False, False, 0)
-            self.streams_box.show_all()
-            return
-        for inp in inputs:
-            row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-            row.get_style_context().add_class("app-row")
-            top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            row.pack_start(top, False, False, 0)
-            mute_btn = Gtk.Button(label=vol_icon(inp["vol"], inp["muted"]))
-            mute_btn.get_style_context().add_class("mute-btn")
-            if inp["muted"]:
-                mute_btn.get_style_context().add_class("muted")
-            top.pack_start(mute_btn, False, False, 0)
-            name_lbl = Gtk.Label(label=inp["name"])
-            name_lbl.get_style_context().add_class("app-name")
-            name_lbl.set_xalign(0)
-            name_lbl.set_ellipsize(3)
+        self._linger = {k: v for k, v in self._linger.items() if v > now}
 
-            top.pack_start(name_lbl, True, True, 0)
-            pct_lbl = Gtk.Label(label=f"{inp['vol']}%")
-            pct_lbl.get_style_context().add_class("app-pct")
-            pct_lbl.set_xalign(1)
-            top.pack_start(pct_lbl, False, False, 0)
-            slider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 150, 1)
-            slider.get_style_context().add_class("app-slider")
-            slider.set_value(inp["vol"])
-            slider.set_draw_value(False)
-            slider.set_hexpand(True)
+        existing = {w._stream_index: w for w in self._iter_stream_rows()
+                    if hasattr(w, "_stream_index")}
 
-            idx = inp["index"]
-            slider.connect(
-                "value-changed",
-                lambda s, i=idx, p=pct_lbl, m=mute_btn: self._on_input_slider(
-                    s, i, p, m
-                ),
-            )
+        for idx in existing:
+            if idx not in live and idx not in self._linger:
+                self._linger[idx] = now + STREAM_LINGER_S
 
-            mute_btn.connect(
-                "clicked",
-                lambda _, i=idx, b=mute_btn, s=slider: self._on_input_mute(i, b, s),
-            )
+        show = list(live.keys()) + [i for i in self._linger if i not in live]
 
-            row.pack_start(slider, False, False, 0)
-            self.streams_box.pack_start(row, False, False, 0)
-        self.streams_box.show_all()
+        for idx, row in list(existing.items()):
+            if idx not in show:
+                self.streams_box.remove(row)
+
+        existing = {w._stream_index: w for w in self._iter_stream_rows()
+                    if hasattr(w, "_stream_index")}
+
+        for idx in show:
+            inp     = live.get(idx)
+            is_live = inp is not None
+            if inp is None:
+                inp = {"index": idx, "name": "…", "vol": 0, "muted": True}
+
+            if idx in existing:
+                row = existing[idx]
+                if is_live:
+                    if not self._dragging.get(idx, False):
+                        self._input_muted[idx] = inp["muted"]
+                        row._mute_btn.set_label(vol_icon(inp["vol"], inp["muted"]))
+                        if inp["muted"]:
+                            row._mute_btn.add_css_class("muted")
+                        else:
+                            row._mute_btn.remove_css_class("muted")
+                        row._slider.handler_block_by_func(row._on_value_changed)
+                        row._slider.get_adjustment().set_value(inp["vol"])
+                        row._slider.handler_unblock_by_func(row._on_value_changed)
+                        row._pct_lbl.set_text(f"{inp['vol']}%")
+                    row.remove_css_class("linger")
+                    row.set_sensitive(True)
+                else:
+                    row.add_css_class("linger")
+                    row.set_sensitive(False)
+            else:
+                row = self._make_stream_row(inp, is_live)
+                self.streams_box.append(row)
+
+        non_rows = [w for w in self._iter_stream_rows() if not hasattr(w, "_stream_index")]
+        has_rows = any(hasattr(w, "_stream_index") for w in self._iter_stream_rows())
+
+        if not has_rows:
+            if not non_rows:
+                empty = Gtk.Label(label="no active streams")
+                empty.add_css_class("app-name")
+                empty.set_margin_top(6)
+                empty.set_margin_bottom(4)
+                self.streams_box.append(empty)
+        else:
+            for w in non_rows:
+                self.streams_box.remove(w)
+
+    def _make_stream_row(self, inp, is_live):
+        row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+        row.add_css_class("app-row")
+        row._stream_index = inp["index"]
+
+        top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        row.append(top)
+
+        mute_btn = Gtk.Button(label=vol_icon(inp["vol"], inp["muted"]))
+        mute_btn.add_css_class("mute-btn")
+        mute_btn.set_can_focus(False)
+        mute_btn.set_cursor(Gdk.Cursor.new_from_name("pointer", None))
+        if inp["muted"]:
+            mute_btn.add_css_class("muted")
+        top.append(mute_btn)
+        row._mute_btn = mute_btn
+
+        self._input_muted[inp["index"]] = inp["muted"]
+
+        name_lbl = Gtk.Label(label=inp["name"])
+        name_lbl.add_css_class("app-name")
+        name_lbl.set_xalign(0)
+        name_lbl.set_ellipsize(3)
+        name_lbl.set_hexpand(True)
+        top.append(name_lbl)
+
+        pct_lbl = Gtk.Label(label=f"{inp['vol']}%")
+        pct_lbl.add_css_class("app-pct")
+        pct_lbl.set_xalign(1)
+        top.append(pct_lbl)
+        row._pct_lbl = pct_lbl
+
+        slider = make_slider(max_val=100)
+        slider.get_adjustment().set_value(min(inp["vol"], 100))
+        row._slider = slider
+
+        idx = inp["index"]
+
+        def on_value_changed(s, i=idx, p=pct_lbl, m=mute_btn):
+            self._on_input_slider(s, i, p, m)
+        row._on_value_changed = on_value_changed
+
+        slider.connect("value-changed", on_value_changed)
+        mute_btn.connect(
+            "clicked",
+            lambda _, i=idx, b=mute_btn, s=slider: self._on_input_mute(i, b, s),
+        )
+        row.append(slider)
+
+        if not is_live:
+            row.add_css_class("linger")
+            row.set_sensitive(False)
+
+        return row
 
     def _refresh_streams(self):
-        if self._streams_open:
-            self._build_streams()
+        self._build_streams()
         return True
 
-    # ── Master callbacks ──────────────────────────────────────────────────────
+    # ── Callbacks ─────────────────────────────────────────────────────────────
     def _on_master_slider(self, scale):
-        self._master_vol = int(scale.get_value())
-        set_volume(self._master_vol)
-        self._master_muted = get_muted()
-        self.master_pct.set_text(f"{self._master_vol}%")
-        self.master_icon.set_label(vol_icon(self._master_vol, self._master_muted))
+        self._mvol = int(scale.get_value())
+        self.master_pct.set_text(f"{self._mvol}%")
+        self.mute_btn.set_label(vol_icon(self._mvol, self._mmuted))
+        set_volume(self._mvol)
 
     def _on_master_mute(self, _):
         toggle_mute()
-        self._master_muted = get_muted()
-        self._master_vol = get_volume()
-        self.master_icon.set_label(vol_icon(self._master_vol, self._master_muted))
-        ctx = self.master_icon.get_style_context()
-        if self._master_muted:
-            ctx.add_class("muted")
+        self._mmuted = get_muted()
+        self._mvol   = get_volume()
+        self.mute_btn.set_label(vol_icon(self._mvol, self._mmuted))
+        if self._mmuted:
+            self.mute_btn.add_css_class("muted")
         else:
-            ctx.remove_class("muted")
-    # ── App stream callbacks ──────────────────────────────────────────────────
+            self.mute_btn.remove_css_class("muted")
+
     def _on_input_slider(self, scale, index, pct_lbl, mute_btn):
-        vol = int(scale.get_value())
-        set_input_volume(index, vol)
+        vol   = int(scale.get_value())
+        muted = self._input_muted.get(index, False)
         pct_lbl.set_text(f"{vol}%")
-        muted = "muted" in mute_btn.get_style_context().list_classes()
         mute_btn.set_label(vol_icon(vol, muted))
+        self._dragging[index] = True
+        if index in self._settle_source:
+            GLib.source_remove(self._settle_source[index])
+        set_input_volume(index, vol)
+        self._settle_source[index] = GLib.timeout_add(
+            DRAG_SETTLE_MS, self._clear_dragging, index
+        )
+
+    def _clear_dragging(self, index):
+        self._dragging[index] = False
+        self._settle_source.pop(index, None)
+        return False
 
     def _on_input_mute(self, index, btn, slider):
         toggle_input_mute(index)
-        ctx = btn.get_style_context()
-        muted = "muted" in ctx.list_classes()
+        muted = not self._input_muted.get(index, False)
+        self._input_muted[index] = muted
         if muted:
-            ctx.remove_class("muted")
+            btn.add_css_class("muted")
         else:
-            ctx.add_class("muted")
+            btn.remove_css_class("muted")
         vol = int(slider.get_value()) if slider else 50
-        btn.set_label(vol_icon(vol, not muted))
+        btn.set_label(vol_icon(vol, muted))
 
-    def _on_key(self, _, event):
-        if event.keyval == Gdk.KEY_Escape:
-            Gtk.main_quit()
+    def _on_key(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_Escape:
+            _loop.quit()
+        return False
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+# ── Entry point ────────────────────────────────────────────────────────────────
 def main():
-    # Toggle: if already running, kill it and exit
-    result = subprocess.run(
-        ["pgrep", "-f", "launch-audio.py"], capture_output=True, text=True
-    )
-
-    pids = [
-        int(p)
-        for p in result.stdout.strip().splitlines()
-        if p.strip().isdigit() and int(p.strip()) != os.getpid()
-    ]
-
-    if pids:
-        for pid in pids:
-            try:
-                os.kill(pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
+    for pid in _find_existing_pids():
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
         sys.exit(0)
 
-    # Show backdrop first (lower layer), then popup (overlay layer)
-    backdrop = Backdrop(Gtk.main_quit)
-    backdrop.show_all()
+    apply_css()
     popup = VolumePopup()
-    popup.show_all()
     popup.present()
-    Gtk.main()
+    _loop.run()
+
+
 if __name__ == "__main__":
     main()
-
