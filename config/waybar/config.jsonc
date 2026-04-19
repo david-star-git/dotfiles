@@ -61,7 +61,7 @@
 },
 "custom/logout": {
     "format": "",
-    "on-click": "logout-menu",
+    "on-click": "wlogout --buttons-per-row 6",
   },
   "custom/update": {
     "format": "",
