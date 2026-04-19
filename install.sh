@@ -535,7 +535,8 @@ install_eww() {
         vnstat \
         python-gobject \
         pamixer \
-        gtk-layer-shell
+        gtk-layer-shell \
+        gtk4-layer-shell
 
     info "Enabling systemd services..."
     # Enable services that need to be running for eww scripts to query them.
