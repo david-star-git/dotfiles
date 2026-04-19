@@ -471,7 +471,8 @@ install_vlc() {
 # Edit hyprland.conf, keybinds.conf, autostart.conf, etc. there.
 install_hyprland() {
     info "Installing Hyprland..."
-    pacman_install hyprland cliphist awww hyprcursor 
+    pacman_install hyprland cliphist awww hyprcursor tesseract tesseract-data-eng grim slurp wl-clipboard
+    # tesseract-data-deu tesseract-data-spa
 
     info "Installing rofi (wayland fork)..."
     yay_install rofi-wayland
@@ -516,7 +517,7 @@ install_eww() {
     info "Installing waybar bar stack..."
 
     info "Installing eww (AUR)..."
-    yay_install eww
+    yay_install eww wlogout
 
     info "Installing pacman packages..."
     pacman_install \
@@ -531,7 +532,10 @@ install_eww() {
         rfkill \
         tor \
         jq socat \
-        vnstat
+        vnstat \
+        python-gobject \
+        pamixer \
+        gtk-layer-shell
 
     info "Enabling systemd services..."
     # Enable services that need to be running for eww scripts to query them.
@@ -554,6 +558,7 @@ install_eww() {
     mkdir -p "$ORIGINAL_HOME/.config"
     link "$SCRIPT_DIR/config/eww" "$ORIGINAL_HOME/.config/eww"
     link "$SCRIPT_DIR/config/waybar" "$ORIGINAL_HOME/.config/waybar"
+    link "$SCRIPT_DIR/config/wlogout" "$ORIGINAL_HOME/.config/wlogout"
 
     ok "eww bar done"
 }

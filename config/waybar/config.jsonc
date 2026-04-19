@@ -9,8 +9,6 @@
   "margin-right": 5,
   "margin-bottom": 0,
   "modules-left": [
-    "custom/omarchy",
-    "custom/separator",
     "hyprland/workspaces",
     "custom/separator",
     "cpu",
@@ -38,7 +36,9 @@
     "network",
     "power-profiles-daemon",
     "pulseaudio#input",
-    "battery"
+    "battery",
+    "custom/separator",
+    "custom/logout"
   ],
   "hyprland/workspaces": {
     "disable-scroll": true,
@@ -59,7 +59,7 @@
     "format": "|", 
     "tooltip": false
 },
-"custom/omarchy": {
+"custom/logout": {
     "format": "",
     "on-click": "logout-menu",
   },
@@ -233,7 +233,7 @@
     "max-volume": 100,
     "scroll-step": 2,
     "smooth-scrolling-threshold": 1,
-    "on-click": "omarchy-launch-audio",
+    "on-click": "~/.config/hypr/scripts/launch-audio.py",
     "on-click-right": "pamixer -t"
   },
    "mpris": {

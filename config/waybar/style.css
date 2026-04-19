@@ -1,3 +1,4 @@
+
 @define-color foreground #cdd6f4;
 @define-color background #181824;
 
@@ -127,7 +128,7 @@ padding: 1px 4px;
 #bluetooth,
 #pulseaudio,
 #power-profiles-daemon,
-#custom-omarchy,
+#custom-logout,
 #idle_inhibitor,
 #custom-idle-indicator,
 #custom-notification-silencing-indicator,
@@ -139,7 +140,7 @@ padding: 0 4px;
 margin: 1px 3px 1px 3px;
 }
 
-#custom-omarchy {
+#custom-logout {
 font-size: 14px;
 padding-left: 0px;
 }
