@@ -53,13 +53,13 @@ C_ACCENT  = "#c0415a"
 
 STREAM_LINGER_S  = 120
 DRAG_SETTLE_MS   = 500
-REVEAL_DURATION  = 150   # ms for the slide-down animation
+REVEAL_DURATION  = 200   # ms for the slide-down animation
 
 # Cache file for right margin so hyprctl only runs once ever per monitor config
 _MARGIN_CACHE = os.path.expanduser("~/.cache/audio-popup-margin")
 
 CSS = f"""
-* {{ outline: none; box-shadow: none; }}
+* {{ outline: none; box-shadow: none; -gtk-accent-color: {C_ACCENT}; }}
 window {{
     background-color: {C_BG};
     border: 2px solid {C_ACCENT};
@@ -113,7 +113,7 @@ scale slider {{
     min-width: 8px; min-height: 8px;
     border: 1px solid {C_ACCENT}; outline: none; box-shadow: none;
 }}
-scale slider:hover   {{ background-color: {C_TEXT}; }}
+scale slider:hover   {{ background-color: {C_SURFACE}; }}
 scale:focus trough,
 scale:focus slider   {{ outline: none; box-shadow: none; }}
 """
@@ -168,7 +168,7 @@ def get_sink_name():
 
 def vol_icon(vol, muted):
     if muted:    return "󰝟"
-    if vol == 0: return "󰝦"
+    if vol == 0: return "󰝟"
     if vol < 33: return "󰕿"
     if vol < 66: return "󰖀"
     return "󰕾"
@@ -238,7 +238,7 @@ def make_slider(max_val=100):
     s.set_hexpand(True)
     s.set_can_focus(False)
     # GTK4 programmatic cursor — CSS cursor: is unreliable on Wayland
-    s.set_cursor(Gdk.Cursor.new_from_name("ew-resize", None))
+    s.set_cursor(Gdk.Cursor.new_from_name("pointer", None))
     return s
 
 def apply_css():
