@@ -560,6 +560,7 @@ install_eww() {
     link "$SCRIPT_DIR/config/eww" "$ORIGINAL_HOME/.config/eww"
     link "$SCRIPT_DIR/config/waybar" "$ORIGINAL_HOME/.config/waybar"
     link "$SCRIPT_DIR/config/wlogout" "$ORIGINAL_HOME/.config/wlogout"
+    link "$SCRIPT_DIR/config/mako" "$ORIGINAL_HOME/.config/mako"
 
     ok "eww bar done"
 }
