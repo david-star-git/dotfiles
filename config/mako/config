@@ -1,0 +1,52 @@
+# ~/.config/mako/config
+# Style matches the audio popup: Catppuccin Mocha palette, crimson accent
+
+# ── Layout ────────────────────────────────────────────────────────────────────
+anchor=top-right
+layer=overlay
+max-visible=5
+sort=-time
+
+margin=8
+padding=12,14
+width=320
+height=120
+border-size=2
+border-radius=5
+
+# ── Typography ────────────────────────────────────────────────────────────────
+font=monospace 10
+
+# ── Colors (default / low urgency) ───────────────────────────────────────────
+background-color=#11111be6
+border-color=#c0415a
+text-color=#cdd6f4
+progress-color=over #c0415a
+
+# ── Behaviour ─────────────────────────────────────────────────────────────────
+default-timeout=6000
+ignore-timeout=0
+group-by=app-name
+
+format=<b>%s</b>\n%b
+
+# ── Normal urgency ────────────────────────────────────────────────────────────
+[urgency=normal]
+background-color=#11111be6
+border-color=#c0415a
+text-color=#cdd6f4
+default-timeout=6000
+
+# ── Low urgency — dimmed border ───────────────────────────────────────────────
+[urgency=low]
+background-color=#11111be6
+border-color=#6e3848
+text-color=#a6adc8
+default-timeout=4000
+
+# ── Critical urgency — brighter, no timeout ───────────────────────────────────
+[urgency=critical]
+background-color=#1e1e2e
+border-color=#f38ba8
+text-color=#cdd6f4
+default-timeout=0
