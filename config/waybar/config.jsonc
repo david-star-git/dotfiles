@@ -62,6 +62,7 @@
 "custom/logout": {
     "format": "",
     "on-click": "wlogout --buttons-per-row 6",
+    "tooltip": false
   },
   "custom/update": {
     "format": "",
@@ -84,7 +85,7 @@
     "on-click-right": "omarchy-voxtype-config",
     "on-click": "omarchy-voxtype-model"
   },
-      "custom/idle-indicator": {
+  "custom/idle-indicator": {
     "on-click": "omarchy-toggle-idle",
     "exec": "$OMARCHY_PATH/default/waybar/indicators/idle.sh",
     "signal": 9,
@@ -226,7 +227,7 @@
   "pulseaudio#output": {
     "format": "VOL {icon}",
     "tooltip-format": "{icon}   {volume}%",
-    "format-muted": "",
+    "format-muted": "VOL ",
       "format-icons": {
       "default": ["󰝦","󰪞","󰪟","󰪠","󰪡","󰪢","󰪣","󰪤","󰪥"]
     },
