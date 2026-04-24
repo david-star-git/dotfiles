@@ -177,3 +177,4 @@ setopt HIST_IGNORE_ALL_DUPS SHARE_HISTORY HIST_VERIFY
 export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
 
+export TERMINAL=kitty
