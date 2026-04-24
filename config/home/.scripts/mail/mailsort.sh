@@ -26,6 +26,31 @@ NC="\e[0m"
 moved=0
 checked=0
 # =============================================================================
+# maildir_move <src_file> <dest_dir>
+#
+# Moves a Maildir message file into <dest_dir>, stripping any mbsync UID
+# tag (,U=NNN) from the filename first.
+#
+# mbsync embeds the folder-local UID into the filename as ,U=NNN. If we move
+# a file from INBOX into another folder without stripping this tag, mbsync
+# sees a UID that belongs to a different folder's sequence and throws:
+#   "UID NNN is beyond highest assigned UID NNN"
+# Stripping ,U=NNN forces mbsync to assign a fresh UID on the next sync.
+# =============================================================================
+maildir_move() {
+    local src="$1"
+    local dest_dir="$2"
+    local basename
+    basename=$(basename "$src")
+    # Strip mbsync's UID annotation: ,U=<digits> anywhere in the filename
+    local newname="${basename//,U=[0-9]*/}"
+    # If the strip produced an empty or identical name, generate a safe unique one
+    if [[ -z "$newname" || "$newname" == "$basename" && -e "$dest_dir/$newname" ]]; then
+        newname="${basename%%,U=*}.$RANDOM"
+    fi
+    mv "$src" "$dest_dir/$newname"
+}
+# =============================================================================
 # sort_mail <folder> <header_pattern>
 #
 # Scans every message in INBOX/new/ and INBOX/cur/ and moves it to <folder>
@@ -39,7 +64,6 @@ sort_mail() {
     local pattern="$2"      # grep -Ei pattern matched against message headers
     local dest="$MAIL_DIR/$folder/new"
     # Create the Maildir structure if it doesn't exist yet.
-    # This is a safety net — the installer should have done this already.
     mkdir -p "$MAIL_DIR/$folder"/{new,cur,tmp}
     # Check both new/ (unseen) and cur/ (previously seen but still in INBOX)
     for subdir in new cur; do
@@ -49,11 +73,10 @@ sort_mail() {
             [[ -f "$msg" ]] || continue
             (( checked++ ))
             # Read only the headers — stop at the first blank line.
-            # This is much faster than reading the whole message body.
             local headers
             headers=$(awk '/^$/{exit} {print}' "$msg")
             if echo "$headers" | grep -Eiq "$pattern"; then
-                mv "$msg" "$dest/"
+                maildir_move "$msg" "$dest"
                 echo -e "${GREEN}  → $(basename "$msg")${NC} ${BLUE}[$folder]${NC}"
                 (( moved++ ))
             fi
@@ -62,15 +85,6 @@ sort_mail() {
 }
 # =============================================================================
 # Mailing list rules
-#
-# Each sort_mail call defines one rule:
-#   arg 1 — Maildir folder name under ~/Mail/
-#   arg 2 — header pattern (matched case-insensitively against To/Cc/List-Id)
-#
-# Pattern tips:
-#   - Use | to match multiple addresses or list IDs for the same folder.
-#   - List-Id headers look like: <list-name.lists.domain.org>
-#   - To/Cc addresses are plain email addresses.
 # =============================================================================
 
 # AUR requests — aur-general-request and aur-dev-request
