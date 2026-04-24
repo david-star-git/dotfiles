@@ -222,7 +222,7 @@ yay_install() { ensure_yay; yay -S --noconfirm --needed "$@"; }
 install_zsh() {
     info "Installing zsh..."
     pacman_install zsh zsh-syntax-highlighting zsh-autosuggestions \
-        zsh-completions zsh-history-substring-search
+        zsh-completions zsh-history-substring-search yt-dlp ffmpeg
     link_home_files
     if [ "$SHELL" != "$(which zsh)" ]; then
         chsh -s "$(which zsh)"

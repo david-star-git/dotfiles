@@ -29,6 +29,8 @@ alias ls='exa -l'
 alias nano='nvim'
 alias vim='nvim'
 
+alias dl='noglob dl'
+
 # Prefer ripgrep over grep when available
 if command -v rg &>/dev/null; then
     alias grep='rg'
@@ -178,3 +180,4 @@ export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
 
 export TERMINAL=kitty
+export DL_DIR="$HOME/Videos"
