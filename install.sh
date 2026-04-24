@@ -364,15 +364,24 @@ install_neomutt() {
 # to register new fonts immediately without a logout.
 install_theme() {
     info "Installing theme..."
-    pacman_install kvantum qt6ct nwg-look
+    pacman_install kvantum qt6ct nwg-look kded unzip
+
+    curl -L "https://github.com/catppuccin/gtk/releases/download/v1.0.3/catppuccin-mocha-red-standard+default.zip" \
+      -o /tmp/catmocha.zip
+    unzip -q /tmp/catmocha.zip -d "$ORIGINAL_HOME/.local/share/themes/"
+
     mkdir -p "$ORIGINAL_HOME/.config"
+    
     link "$SCRIPT_DIR/config/theme/Kvantum"        "$ORIGINAL_HOME/.config/Kvantum"
-    link "$SCRIPT_DIR/config/theme/gtk-3.0"        "$ORIGINAL_HOME/.config/gtk-3.0"
-    link "$SCRIPT_DIR/config/theme/gtk-4.0"        "$ORIGINAL_HOME/.config/gtk-4.0"
     link "$SCRIPT_DIR/fonts"                       "$ORIGINAL_HOME/.fonts"
     link "$SCRIPT_DIR/config/theme/Sweet-cursors"  "$ORIGINAL_HOME/.icons/Sweet-cursors"
     link "$SCRIPT_DIR/config/theme/environment.d"  "$ORIGINAL_HOME/.config/environment.d"
     link "$SCRIPT_DIR/config/theme/qt6ct"          "$ORIGINAL_HOME/.config/qt6ct"
+    link "$SCRIPT_DIR/config/theme/gtk-3.0"        "$ORIGINAL_HOME/.config/gtk-3.0"
+    link "$SCRIPT_DIR/config/theme/gtk-4.0"        "$ORIGINAL_HOME/.config/gtk-4.0"
+    link "$SCRIPT_DIR/config/theme/gtk-themes"     "$ORIGINAL_HOME/.local/share/themes"
+    link "$SCRIPT_DIR/config/theme/kdeglobals"     "$ORIGINAL_HOME/.config/kdeglobals"
+
     info "Refreshing font cache..."
     fc-cache -f "$ORIGINAL_HOME/.fonts"
     ok "theme done"
@@ -471,11 +480,11 @@ install_vlc() {
 # Edit hyprland.conf, keybinds.conf, autostart.conf, etc. there.
 install_hyprland() {
     info "Installing Hyprland..."
-    pacman_install hyprland cliphist awww hyprcursor tesseract tesseract-data-eng grim slurp wl-clipboard
+    pacman_install hyprland cliphist awww hyprcursor tesseract tesseract-data-eng grim slurp wl-clipboard dolphin
     # tesseract-data-deu tesseract-data-spa
 
     info "Installing rofi (wayland fork)..."
-    yay_install rofi-wayland
+    yay_install rofi-wayland catppuccin-gtk-theme-mocha
 
     info "Linking hyprland config..."
     mkdir -p "$ORIGINAL_HOME/.config"
@@ -486,6 +495,8 @@ install_hyprland() {
     mkdir -p ~/.cache/awww
 
     mkdir -p ~/Pictures
+
+    link "$SCRIPT_DIR/config/dolphin" "$ORIGINAL_HOME/.config/dolphin"
 
     ok "hyprland done"
 }
