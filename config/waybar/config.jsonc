@@ -27,7 +27,7 @@
   "modules-right": [
     "group/tray-expander",
     "custom/separator",
-    "idle_inhibitor",
+    "custom/dnd",
     "mpris",
     "custom/separator",
     "backlight",
@@ -250,12 +250,14 @@
     },
     "ignored-players": ["firefox", "chromium", "brave"]
   },
-  "idle_inhibitor": {
-    "format": "{icon}",
-    "format-icons": {
-      "activated": "",
-      "deactivated": "󰾫"
-    }
+  "custom/dnd": {
+    "exec": "~/.config/hypr/scripts/dnd.py --status",
+    "interval": "once",
+    "signal": 4,
+    "format": "{}",
+    "on-click": "~/.config/hypr/scripts/dnd.py --toggle && pkill -SIGRTMIN+4 waybar",
+    "on-click-right": "~/.config/hypr/scripts/dnd.py --ultra && pkill -SIGRTMIN+4 waybar",
+    "tooltip": false
   },
   "custom/updatespacman": {
     "format": "{}{icon}",
