@@ -179,5 +179,8 @@ setopt HIST_IGNORE_ALL_DUPS SHARE_HISTORY HIST_VERIFY
 export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
 
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+gpgconf --launch gpg-agent
+
 export TERMINAL=kitty
 export DL_DIR="$HOME/Videos"
