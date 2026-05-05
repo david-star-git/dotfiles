@@ -1,23 +1,33 @@
+-- =============================================================================
+-- after/plugin/mason.lua - LSP servers, formatters, linters
+--
+-- nvim 0.11+ / lspconfig v3: require("lspconfig").server.setup() is gone.
+-- Servers are now configured via vim.lsp.config() and activated via
+-- vim.lsp.enable(). mason-lspconfig's handlers table wires the two together.
+-- =============================================================================
+
 require("mason").setup()
+
 -- mason-lspconfig only handles LSP servers.
 -- Formatters and linters are installed separately via mason-tool-installer.
 require("mason-lspconfig").setup(
 {
     ensure_installed =
     {
-        "cssls", -- CSS / SCSS
-        "dockerls", -- Dockerfile
-        "docker_compose_language_service", -- docker-compose.yml
-        "html", -- HTML
-        "jdtls", -- Java
-        "lua_ls", -- Lua (covers nvim config)
-        "neocmake", -- CMake (neocmakelsp)
-        "pyright", -- Python type checking + completion
-        "ts_ls", -- TypeScript / JavaScript
-        "vtsls", -- Alternative TS server (vtsls)
-        "yamlls", -- YAML
+        "cssls",
+        "dockerls",
+        "docker_compose_language_service",
+        "html",
+        "jdtls",
+        "lua_ls",
+        "neocmake",
+        "pyright",
+        "ts_ls",
+        "vtsls",
+        "yamlls",
     },
 })
+
 -- mason-tool-installer handles everything mason-lspconfig can't:
 -- formatters, linters, and tools that aren't LSP servers.
 require("mason-tool-installer").setup(
@@ -25,47 +35,70 @@ require("mason-tool-installer").setup(
     ensure_installed =
     {
         -- Python
-        "black", -- formatter
-        "blackd-client", -- connects to a running blackd daemon (faster black)
-        "ruff", -- fast linter + formatter (replaces flake8/isort/etc.)
-        "pyright", -- also listed here so the tool installer tracks it
+        "black",
+        "blackd-client",
+        "ruff",
+        "pyright",
         -- C / C++ / CMake
-        "clangd", -- LSP
-        "clang-format", -- formatter
-        "cmakelang", -- CMake formatter (cmake-format)
-        "cmakelint", -- CMake linter
+        "clangd",
+        "clang-format",
+        "cmakelang",
+        "cmakelint",
         -- Web / JS / TS
-        "prettier", -- formatter for JS/TS/HTML/CSS/JSON/Markdown/YAML
+        "prettier",
         -- Lua
-        "stylua", -- formatter
+        "stylua",
         -- Shell
-        "shfmt", -- formatter
+        "shfmt",
         -- Docker
-        "hadolint", -- Dockerfile linter
-        "djlint", -- Django/Jinja/HTML template linter + formatter
+        "hadolint",
+        "djlint",
         -- SQL
-        "sqlfluff", -- linter + formatter (supports many SQL dialects)
+        "sqlfluff",
         -- YAML
-        "yamlls", -- also tracked here for completeness
+        "yamlls",
     },
     auto_update = true,
     run_on_start = true,
 })
 
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
-local lspconfig = require("lspconfig")
+
 -- Shared on_attach — LSP keymaps that activate only when a server is running.
 local on_attach = function(client, bufnr)
     local map = function(lhs, rhs)
         vim.keymap.set("n", lhs, rhs, { buffer = bufnr, silent = true })
     end
     map("<leader>d", vim.lsp.buf.definition)
-    map("K", vim.lsp.buf.hover)
+    map("K",         vim.lsp.buf.hover)
     map("<leader>rn", vim.lsp.buf.rename)
     map("<leader>ca", vim.lsp.buf.code_action)
-
 end
--- Servers with default config
+
+-- Apply shared defaults to every server via the wildcard config.
+vim.lsp.config("*",
+{
+    capabilities = capabilities,
+    on_attach    = on_attach,
+})
+
+-- lua_ls needs extra config to understand the nvim runtime environment.
+-- Without this it warns on every vim.* call.
+vim.lsp.config("lua_ls",
+{
+    settings =
+    {
+        Lua =
+        {
+            runtime    = { version = "LuaJIT" },
+            diagnostics = { globals = { "vim" } },
+            workspace  = { library = vim.api.nvim_get_runtime_file("", true) },
+            telemetry  = { enable = false },
+        },
+    },
+})
+
+-- Activate all servers declared in ensure_installed above.
 local servers =
 {
     "cssls",
@@ -73,6 +106,7 @@ local servers =
     "docker_compose_language_service",
     "html",
     "jdtls",
+    "lua_ls",
     "neocmake",
     "pyright",
     "ts_ls",
@@ -81,27 +115,5 @@ local servers =
 }
 
 for _, server in ipairs(servers) do
-    lspconfig[server].setup(
-    {
-        capabilities = capabilities,
-        on_attach = on_attach,
-    })
+    vim.lsp.enable(server)
 end
--- lua_ls needs extra config to understand the nvim runtime environment.
--- Without this it warns on every vim.* call.
-lspconfig.lua_ls.setup(
-{
-    capabilities = capabilities,
-    on_attach = on_attach,
-    settings =
-    {
-        Lua =
-        {
-            runtime = { version = "LuaJIT" },
-            diagnostics = { globals = { "vim" } },
-            workspace = { library = vim.api.nvim_get_runtime_file("", true) },
-            telemetry = { enable = false },
-        },
-    },
-})
-

@@ -4,11 +4,15 @@
 -- Treesitter provides fast, accurate syntax highlighting and powers several
 -- other plugins (autotag, indent-blankline scope, autopairs context).
 --
+-- nvim-treesitter v1.0+ removed the `nvim-treesitter.configs` module.
+-- Setup is now done via require("nvim-treesitter") directly, and syntax
+-- highlighting is handled by neovim's built-in vim.treesitter layer.
+--
 -- auto_install = true means any missing grammar is downloaded automatically
 -- when you open a file of that type.
 -- =============================================================================
 
-require("nvim-treesitter.configs").setup(
+require("nvim-treesitter").setup(
 {
     -- Grammars to always keep installed
     ensure_installed =
@@ -30,22 +34,7 @@ require("nvim-treesitter.configs").setup(
         "vue",
     },
     sync_install = false, -- install grammars asynchronously
-    auto_install = true, -- install missing grammars on first open
-    highlight =
-    {
-        enable = true,
-        -- Don't mix treesitter highlighting with the old regex-based syntax —
-        -- they conflict and produce ugly results.
-        additional_vim_regex_highlighting = false,
-    },
-})
-
--- nvim-ts-autotag — auto-close/rename HTML tags using the treesitter tree.
--- filetypes covers HTML, Django templates, and React/Vue JSX.
-require("nvim-ts-autotag").setup(
-{
-    enable = true,
-    filetypes = { "html", "xml", "javascriptreact", "typescriptreact", "htmldjango" },
+    auto_install = true,  -- install missing grammars on first open
 })
 
 -- Improve Django/Jinja template highlighting by linking HTML tag highlight
@@ -55,4 +44,3 @@ vim.cmd([[
     highlight link htmlTagDelimiter Statement
     highlight link htmlSpecialChar Keyword
 ]])
-
