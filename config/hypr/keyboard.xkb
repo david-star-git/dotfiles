@@ -1,0 +1,16 @@
+xkb_keymap {
+    xkb_keycodes  { include "evdev+aliases(qwertz)" };
+    xkb_types     { include "complete" };
+    xkb_compat    { include "complete" };
+    xkb_symbols   {
+        include "pc+de+inet(evdev)"
+
+        // AltGr + . = >
+        key <AB09> { [ period, colon, greater, greater ] };
+        // AltGr + , = <
+        key <AB08> { [ comma, semicolon, less, less ] };
+        // AltGr + # = |  (#/apostrophe key is BKSL on german layout)
+        key <BKSL> { [ numbersign, apostrophe, bar, bar ] };
+    };
+    xkb_geometry  { include "pc(pc105)" };
+};
