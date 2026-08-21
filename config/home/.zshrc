@@ -1,6 +1,7 @@
 # =============================================================================
 # ~/.zshrc
 # =============================================================================
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 # ── Editor ────────────────────────────────────────────────────────────────────
 export EDITOR=nvim
@@ -30,6 +31,8 @@ alias nano='nvim'
 alias vim='nvim'
 
 alias dl='noglob dl'
+
+source ~/.scripts/tools/usb
 
 # Prefer ripgrep over grep when available
 if command -v rg &>/dev/null; then

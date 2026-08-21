@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+# ────────────────────────────────────────────────────────────────
+# usb.sh — encrypted USB controller (fzf + udisks2)
+#
+# usbo = unlock + mount encrypted devices
+#        (only shows encrypted + NOT mounted devices)
+#
+# usbc = unmount + lock encrypted devices
+#        (only shows encrypted + mounted devices)
+#
+# Safety:
+# - NVMe drives hidden by default (use --nvme to override)
+# - Uses `command` to avoid zsh alias/hash issues
+# ────────────────────────────────────────────────────────────────
+
+
+# ── helper: list encrypted devices ─────────────────────────────
+_usb_list_encrypted() {
+    local include_nvme="$1"
+
+    lsblk -rpno NAME,TYPE,FSTYPE,LABEL,MOUNTPOINT | awk -v nvme="$include_nvme" '
+    {
+        dev=$1
+        type=$2
+        fs=$3
+        label=$4
+        mp=$5
+
+        # hide NVMe unless explicitly allowed
+        if (nvme != "1" && dev ~ /nvme/) next
+
+        # only encrypted partitions
+        if (type=="part" && fs ~ /crypto_LUKS|crypto_LUKS2|crypto_LUK/) {
+            printf "%s\t%s\t%s\t%s\n", dev, label, fs, mp
+        }
+    }'
+}
+
+
+# ── open: unlock + mount ───────────────────────────────────────
+usbo() {
+    local dev include_nvme=0
+
+    [[ "$1" == "--nvme" ]] && include_nvme=1
+
+    # fuzzy pick ONLY unmounted encrypted devices
+    if [[ -z "$1" || "$1" == "--nvme" ]]; then
+        dev=$(_usb_list_encrypted "$include_nvme" |
+            awk '$4=="" {printf "%s\t%s (%s)\n", $1, $2, $3}' |
+            fzf --prompt="Unlock USB > " \
+                --header="Encrypted + UNMOUNTED devices only")
+        dev=$(echo "$dev" | awk '{print $1}')
+    else
+        dev="$1"
+    fi
+
+    [[ -z "$dev" ]] && return 1
+
+    echo "[usb] unlocking $dev..."
+
+    local out dm path
+
+    out=$(command udisksctl unlock -b "$dev") || return 1
+    dm=$(echo "$out" | awk '{print $NF}' | tr -d '.')
+
+    echo "[usb] mounting /dev/$dm..."
+
+    out=$(command udisksctl mount -b "/dev/$dm") || return 1
+    path=$(echo "$out" | sed 's/.*at //')
+
+    echo "[usb] mounted at $path"
+
+    dolphin "$path" >/dev/null 2>&1 &
+}
+
+
+# ── close: unmount + lock ──────────────────────────────────────
+usbc() {
+    local dev include_nvme=0
+
+    [[ "$1" == "--nvme" ]] && include_nvme=1
+
+    # fuzzy pick ONLY mounted encrypted devices
+    if [[ -z "$1" || "$1" == "--nvme" ]]; then
+        dev=$(_usb_list_encrypted "$include_nvme" |
+            awk '$4!="" {printf "%s\t%s (%s) mounted\n", $1, $2, $3}' |
+            fzf --prompt="Lock USB > " \
+                --header="Encrypted + MOUNTED devices only")
+        dev=$(echo "$dev" | awk '{print $1}')
+    else
+        dev="$1"
+    fi
+
+    [[ -z "$dev" ]] && return 1
+
+    echo "[usb] locking $dev..."
+
+    local dm
+    dm=$(lsblk -ln -o NAME "$dev" | tail -n 1)
+
+    command udisksctl unmount -b "/dev/$dm"
+    command udisksctl lock -b "$dev"
+
+    echo "[usb] locked $dev"
+}

@@ -23,9 +23,6 @@ named-mailboxes "Sent"    =Sent
 named-mailboxes "Drafts"  =Drafts
 named-mailboxes "Trash"   =Trash
 
-# Mailing lists
-mailboxes =AUR =Arch =OssSecurity
-
 # ── Sending ───────────────────────────────────────────────────────────────────
 set sendmail = "/usr/bin/msmtp"
 
