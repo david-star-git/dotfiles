@@ -359,28 +359,38 @@ install_neomutt() {
 }
 
 # --- theme ---
-# Links Kvantum (Qt theming engine), GTK 3 and GTK 4 themes, the .themes
-# directory for window decorations, and the fonts directory. Runs fc-cache
-# to register new fonts immediately without a logout.
+# Links Kvantum (Qt theming engine), GTK 3 and GTK 4 themes, the WhiteSur
+# GTK/icon/cursor theme, the shared color palette, and the fonts directory.
+# Runs fc-cache to register new fonts immediately without a logout.
+#
+# Theme: Apple Dark Mode (macOS system colors), green accent (#30D158).
+# Everything under config/theme/gtk-themes, config/theme/icons, and
+# config/theme/WhiteSur-cursors is vendored directly in this repo — built
+# once from vinceliuice/WhiteSur-{gtk,icon,cursor}-theme with -c dark -t
+# green, so no network fetch or build step happens on install.
+#
+# Single source of truth for color values: config/theme/colors/palette.toml.
+# Run `python3 config/theme/colors/generate.py` after editing it to
+# re-theme every app that doesn't support importing it directly.
 install_theme() {
     info "Installing theme..."
-    pacman_install kvantum qt6ct nwg-look kded unzip
-
-    curl -L "https://github.com/catppuccin/gtk/releases/download/v1.0.3/catppuccin-mocha-red-standard+default.zip" \
-      -o /tmp/catmocha.zip
-    unzip -q /tmp/catmocha.zip -d "$ORIGINAL_HOME/.local/share/themes/"
+    pacman_install kvantum qt6ct nwg-look kded
 
     mkdir -p "$ORIGINAL_HOME/.config"
-    
+
     link "$SCRIPT_DIR/config/theme/Kvantum"        "$ORIGINAL_HOME/.config/Kvantum"
     link "$SCRIPT_DIR/fonts"                       "$ORIGINAL_HOME/.fonts"
-    link "$SCRIPT_DIR/config/theme/Sweet-cursors"  "$ORIGINAL_HOME/.icons/Sweet-cursors"
+    link "$SCRIPT_DIR/config/theme/WhiteSur-cursors" "$ORIGINAL_HOME/.icons/WhiteSur-cursors"
     link "$SCRIPT_DIR/config/theme/environment.d"  "$ORIGINAL_HOME/.config/environment.d"
     link "$SCRIPT_DIR/config/theme/qt6ct"          "$ORIGINAL_HOME/.config/qt6ct"
     link "$SCRIPT_DIR/config/theme/gtk-3.0"        "$ORIGINAL_HOME/.config/gtk-3.0"
     link "$SCRIPT_DIR/config/theme/gtk-4.0"        "$ORIGINAL_HOME/.config/gtk-4.0"
     link "$SCRIPT_DIR/config/theme/gtk-themes"     "$ORIGINAL_HOME/.local/share/themes"
+    link "$SCRIPT_DIR/config/theme/icons"          "$ORIGINAL_HOME/.local/share/icons"
     link "$SCRIPT_DIR/config/theme/kdeglobals"     "$ORIGINAL_HOME/.config/kdeglobals"
+
+    mkdir -p "$ORIGINAL_HOME/.config/theme"
+    link "$SCRIPT_DIR/config/theme/colors"         "$ORIGINAL_HOME/.config/theme/colors"
 
     info "Refreshing font cache..."
     fc-cache -f "$ORIGINAL_HOME/.fonts"
@@ -484,7 +494,7 @@ install_hyprland() {
     # tesseract-data-deu tesseract-data-spa
 
     info "Installing rofi (wayland fork)..."
-    yay_install rofi-wayland catppuccin-gtk-theme-mocha
+    yay_install rofi-wayland
 
     info "Linking hyprland config..."
     mkdir -p "$ORIGINAL_HOME/.config"
@@ -515,6 +525,7 @@ install_hyprland() {
 #   bluez                  — Bluetooth stack
 #   power-profiles-daemon  — CPU power-profile switching (performance/balanced/saver)
 #   brightnessctl          — backlight control (no root required)
+#   upower                 — battery info for the eww quick-settings footer
 #   mako                   — Wayland notification daemon
 #   rfkill                 — enable/disable wireless devices
 #   tor                    — anonymising proxy (scripts may query its status)
@@ -539,6 +550,8 @@ install_eww() {
         bluez bluez-utils \
         power-profiles-daemon \
         brightnessctl \
+        upower \
+        iptables \
         mako \
         rfkill \
         tor \

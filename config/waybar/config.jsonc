@@ -11,13 +11,14 @@
   "modules-left": [
     "hyprland/workspaces",
     "custom/separator",
+    "custom/active-window",
+    "custom/separator",
     "cpu",
     "memory",
     "pulseaudio#output"
 
   ],
   "modules-center": [
-    "clock",
     "custom/idle-indicator",
     "custom/notification-silencing-indicator",
     "custom/voxtype",
@@ -34,9 +35,13 @@
     "custom/updatespacman",
     "bluetooth",
     "network",
+    "custom/net-speed",
     "power-profiles-daemon",
     "pulseaudio#input",
     "battery",
+    "custom/separator",
+    "custom/quick-settings",
+    "clock",
     "custom/separator",
     "custom/logout"
   ],
@@ -142,7 +147,20 @@
         "today": "<span color='#ff6699'><b>{}</b></span>",
       },
     },
+    "on-click": "eww open --toggle notification-center",
     "on-click-right": "omarchy-launch-floating-terminal-with-presentation omarchy-tz-select"
+  },
+  "custom/active-window": {
+    "exec": "~/.config/hypr/scripts/active-window.sh",
+    "interval": 1,
+    "format": "{}",
+    "max-length": 24,
+    "tooltip": false
+  },
+  "custom/quick-settings": {
+    "format": "󰒓",
+    "on-click": "eww open --toggle quick-settings",
+    "tooltip-format": "Quick Settings"
   },
   "network": {
     "format-icons": [
@@ -161,7 +179,13 @@
     "tooltip-format-disconnected": "Disconnected",
     "interval": 3,
     "spacing": 1,
-    "on-click": "omarchy-launch-wifi"
+    "on-click": "eww open --toggle network-panel"
+  },
+  "custom/net-speed": {
+    "exec": "~/.config/hypr/scripts/net-speed.sh",
+    "interval": 2,
+    "format": "{}",
+    "tooltip": false
   },
   "battery": {
     "format": "{capacity}% {icon}",
@@ -209,7 +233,7 @@
     "format-disabled": "󰂲",
     "format-connected": "󰂱",
     "tooltip-format": "Devices connected: {num_connections}",
-    "on-click": "omarchy-launch-bluetooth"
+    "on-click": "eww open --toggle bluetooth-panel"
   },
   "pulseaudio#input": {
     "format-source": "",

@@ -19,70 +19,70 @@ term = "xterm-256color"
 normal = { family = "Monolisa" }
 
 [colors.primary]
-background = "#1e1e2e"
-foreground = "#cdd6f4"
-dim_foreground = "#7f849c"
-bright_foreground = "#cdd6f4"
+background = "#1a1a1c"
+foreground = "#e5e5e7"
+dim_foreground = "#6e6e73"
+bright_foreground = "#e5e5e7"
 
 [colors.cursor]
-text = "#1e1e2e"
-cursor = "#f5e0dc"
+text = "#1a1a1c"
+cursor = "#ffd7b5"
 
 [colors.vi_mode_cursor]
-text = "#1e1e2e"
-cursor = "#b4befe"
+text = "#1a1a1c"
+cursor = "#5e5ce6"
 
 [colors.search.matches]
-foreground = "#1e1e2e"
-background = "#a6adc8"
+foreground = "#1a1a1c"
+background = "#a1a1a6"
 
 [colors.search.focused_match]
-foreground = "#1e1e2e"
-background = "#a6e3a1"
+foreground = "#1a1a1c"
+background = "#32d74b"
 
 [colors.footer_bar]
-foreground = "#1e1e2e"
-background = "#a6adc8"
+foreground = "#1a1a1c"
+background = "#a1a1a6"
 
 [colors.hints.start]
-foreground = "#1e1e2e"
-background = "#f9e2af"
+foreground = "#1a1a1c"
+background = "#ffd60a"
 
 [colors.hints.end]
-foreground = "#1e1e2e"
-background = "#a6adc8"
+foreground = "#1a1a1c"
+background = "#a1a1a6"
 
 [colors.selection]
-text = "#1e1e2e"
-background = "#f5e0dc"
+text = "#1a1a1c"
+background = "#ffd7b5"
 
 [colors.normal]
-black = "#45475a"
-red = "#f38ba8"
-green = "#a6e3a1"
-yellow = "#f9e2af"
-blue = "#89b4fa"
-magenta = "#f5c2e7"
-cyan = "#94e2d5"
-white = "#bac2de"
+black = "#28282b"
+red = "#ff453a"
+green = "#32d74b"
+yellow = "#ffd60a"
+blue = "#0a84ff"
+magenta = "#ff7ab2"
+cyan = "#40c8e0"
+white = "#48484a"
 
 [colors.bright]
-black = "#585b70"
-red = "#f38ba8"
-green = "#a6e3a1"
-yellow = "#f9e2af"
-blue = "#89b4fa"
-magenta = "#f5c2e7"
-cyan = "#94e2d5"
-white = "#a6adc8"
+black = "#3a3a3d"
+red = "#ff453a"
+green = "#32d74b"
+yellow = "#ffd60a"
+blue = "#0a84ff"
+magenta = "#ff7ab2"
+cyan = "#40c8e0"
+white = "#a1a1a6"
 
 [[colors.indexed_colors]]
 index = 16
-color = "#fab387"
+color = "#ff9f0a"
 
 [[colors.indexed_colors]]
 index = 17
-color = "#f5e0dc"
+color = "#ffd7b5"
 
 [terminal.shell]
 program = "/usr/bin/tmux"

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# volume_mute — shows a mute-state OSD for the default sink.
+set -euo pipefail
+
+muted=$(pactl get-sink-mute @DEFAULT_SINK@ | grep -oP '(?<=Mute: )\w+')
+
+if [[ "$muted" == "yes" ]]; then
+    notify-send -a "volume" -u low -i "audio-volume-muted" \
+        -h string:x-canonical-private-synchronous:volume \
+        -h int:value:0 \
+        "Volume" "Muted"
+else
+    vol=$(pactl get-sink-volume @DEFAULT_SINK@ | grep -oP '\d+(?=%)' | head -1)
+    notify-send -a "volume" -u low -i "audio-volume-high" \
+        -h string:x-canonical-private-synchronous:volume \
+        -h int:value:"$vol" \
+        "Volume" "${vol}%"
+fi

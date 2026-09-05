@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# microphone_mute — shows a mute-state OSD for the default source (mic).
+set -euo pipefail
+
+muted=$(pactl get-source-mute @DEFAULT_SOURCE@ | grep -oP '(?<=Mute: )\w+')
+
+if [[ "$muted" == "yes" ]]; then
+    notify-send -a "microphone" -u low -i "microphone-sensitivity-muted" \
+        -h string:x-canonical-private-synchronous:microphone \
+        "Microphone" "Muted"
+else
+    notify-send -a "microphone" -u low -i "microphone-sensitivity-high" \
+        -h string:x-canonical-private-synchronous:microphone \
+        "Microphone" "Unmuted"
+fi

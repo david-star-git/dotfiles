@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# brightness_control — adjust screen brightness by a relative step.
+# brightnessctl clamps to 1%-100% on its own, so no manual bounds needed.
+#
+# Usage: brightness_control -s +2
+#        brightness_control -s -2
+set -euo pipefail
+
+step=2
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -s)
+            arg="$2"
+            case "$arg" in
+                +*) step="${arg#+}%+" ;;
+                -*) step="${arg#-}%-" ;;
+                *)  step="${arg}%+" ;;
+            esac
+            shift 2
+            ;;
+        *) shift ;;
+    esac
+done
+
+brightnessctl set "$step" >/dev/null
