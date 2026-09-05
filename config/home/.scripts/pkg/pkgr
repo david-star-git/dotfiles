@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────
 #  pkgr  —  interactive package remover
 #           lists all explicitly installed packages (native + AUR)
-#           Apple Dark Mode  ·  fast: zero per-pkg subshells
+#           catppuccin mocha  ·  fast: zero per-pkg subshells
 #
 #  FIX: pacman -Sl output (~80k lines) is NEVER stored in a shell
 #  variable — doing so and passing via awk -v hits the kernel ARG_MAX
@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-# ── Apple Dark Mode colours ──────────────────────────────────────
+# ── catppuccin mocha colours ──────────────────────────────────────
 C_CORE=$'\033[38;2;166;227;161m'
 C_EXTRA=$'\033[38;2;137;220;235m'
 C_MULTI=$'\033[38;2;249;226;175m'
@@ -88,27 +88,27 @@ all_installed=$(
   <(pacman -Q  2>/dev/null)
 )
 
-# ── fzf Apple Dark Mode colour map ──────────────────────────────
+# ── fzf catppuccin mocha colour map ──────────────────────────────
 FZF_COLORS=(
-  --color='bg:#1a1a1c'
-  --color='bg+:#232326'
-  --color='border:#3a3a3d'
-  --color='header:#6e6e73'
-  --color='info:#5e5ce6'
-  --color='label:#e5e5e7'
-  --color='marker:#32d74b'
-  --color='pointer:#ff453a'
-  --color='prompt:#0a84ff'
-  --color='query:#e5e5e7'
-  --color='scrollbar:#3a3a3d'
-  --color='separator:#3a3a3d'
-  --color='spinner:#ffd60a'
-  --color='fg:#e5e5e7'
-  --color='fg+:#e5e5e7'
-  --color='hl:#ff453a'
-  --color='hl+:#ff453a'
-  --color='preview-bg:#161618'
-  --color='preview-border:#3a3a3d'
+  --color='bg:#1e1e2e'
+  --color='bg+:#313244'
+  --color='border:#585b70'
+  --color='header:#6c7086'
+  --color='info:#cba6f7'
+  --color='label:#cdd6f4'
+  --color='marker:#a6e3a1'
+  --color='pointer:#f38ba8'
+  --color='prompt:#89b4fa'
+  --color='query:#cdd6f4'
+  --color='scrollbar:#585b70'
+  --color='separator:#585b70'
+  --color='spinner:#f9e2af'
+  --color='fg:#cdd6f4'
+  --color='fg+:#cdd6f4'
+  --color='hl:#f38ba8'
+  --color='hl+:#f38ba8'
+  --color='preview-bg:#181825'
+  --color='preview-border:#585b70'
 )
 
 # pacman -Qi reads the local db — no network, essentially instant

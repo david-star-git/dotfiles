@@ -25,7 +25,7 @@ export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[01;32m'
 
 # ── Aliases ───────────────────────────────────────────────────────────────────
-export GTK_THEME=WhiteSur-Dark-green
+export GTK_THEME=catppuccin-mocha-sapphire
 alias ls='exa -l'
 alias nano='nvim'
 alias vim='nvim'

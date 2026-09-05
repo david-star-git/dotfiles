@@ -1,17 +1,15 @@
 -- =============================================================================
 -- lua/star/init.lua - core settings
--- Loaded by init.lua via require("star"). Pulls in remaps, the colorscheme,
--- plugins, and the runner, then sets all editor options.
+-- Loaded by init.lua via require("star"). Pulls in remaps, plugins, and the
+-- runner, then sets all editor options.
 -- =============================================================================
 
-require("star.remap") -- keybindings (see remap.lua)
-require("star.theme") -- macglass colorscheme + glass window options (see theme.lua)
-require("star.lazy") -- plugin manager + plugin declarations (see lazy.lua, plugins/*.lua)
-require("star.runner") -- file runner keybinds (see runner.lua)
+require("star.remap")   -- keybindings (see remap.lua)
+require("star.packer")  -- plugin declarations (see packer.lua)
+require("star.runner")  -- file runner keybinds (see runner.lua)
 
 -- ── Colors ────────────────────────────────────────────────────────────────────
--- Enable 24-bit RGB color. Required for the colorscheme (also set inside
--- colors/macglass.lua — harmless to set twice, kept here for clarity).
+-- Enable 24-bit RGB color. Required for Catppuccin and most modern themes.
 vim.o.termguicolors = true
 
 -- ── Clipboard ─────────────────────────────────────────────────────────────────
@@ -29,10 +27,6 @@ vim.opt.relativenumber = true
 vim.opt.cursorline = true
 vim.opt.cursorlineopt = "number"
 
--- Always keep a sign column so gitsigns/diagnostics markers don't shift the
--- text horizontally when they appear.
-vim.opt.signcolumn = "yes"
-
 -- ── Indentation ───────────────────────────────────────────────────────────────
 -- 4-space indentation, spaces not tabs, smart auto-indent.
 vim.opt.tabstop = 4
@@ -44,30 +38,6 @@ vim.opt.smartindent = true
 -- tab arrows and trailing spaces when debugging indentation issues.
 vim.opt.list = false
 -- vim.opt.listchars = { tab = "▸ ", trail = "·" }
-
--- ── Windows / scrolling ───────────────────────────────────────────────────────
--- New splits open below/right, matching where most editors put them.
-vim.opt.splitright = true
-vim.opt.splitbelow = true
-
--- Keep 8 lines of context above/below the cursor.
-vim.opt.scrolloff = 8
-
--- Smooth-scrolls over wrapped lines (built-in, nvim 0.10+). The animated
--- momentum feel for <C-d>/<C-u>/mouse wheel comes from neoscroll.nvim
--- (see plugins/neoscroll.lua) — this option covers a different case.
-vim.opt.smoothscroll = true
-
--- ── Persistence ───────────────────────────────────────────────────────────────
--- Undo history survives closing and reopening a file.
-vim.opt.undofile = true
-
--- React to CursorHold faster (LSP hover, gitsigns blame) without being so low
--- it fires constantly while typing.
-vim.opt.updatetime = 250
-
--- which-key opens faster after pressing a prefix key like <leader>.
-vim.opt.timeoutlen = 400
 
 -- ── Filetype overrides ────────────────────────────────────────────────────────
 -- Makefiles require real tabs — expandtab must be off or make will fail.
@@ -90,6 +60,19 @@ vim.api.nvim_create_autocmd("FileType", {
     end,
 })
 
+-- ── Format keybind ────────────────────────────────────────────────────────────
+-- Ctrl+f: format the buffer. Uses LSP formatting if a server is attached,
+-- falls back to gg=G (vim's built-in re-indent) otherwise.
+-- Note: conform.lua also binds Ctrl+f — conform takes precedence when loaded.
+vim.keymap.set("n", "<C-f>", function()
+    local clients = vim.lsp.get_clients({ bufnr = 0 })
+    if #clients > 0 then
+        vim.lsp.buf.format({ async = true })
+    else
+        vim.cmd("normal gg=G")
+    end
+end, { noremap = true, silent = true })
+
 -- ── Smart Enter in insert mode ────────────────────────────────────────────────
 -- If the cursor is between {} on Enter, expand them onto separate lines
 -- (same behaviour as VS Code's auto-expand). Otherwise just insert a newline.
@@ -103,11 +86,12 @@ vim.keymap.set("i", "<CR>", function()
     end
 end, { expr = true, noremap = true })
 
--- Note on <C-f>: conform.lua registers the format keybind itself (via its
--- lazy.nvim `keys` spec, which is also what makes conform lazy-load the
--- first time you press it). It calls conform.format with
--- lsp_format = "fallback", which already does "use a registered formatter,
--- or fall back to the LSP's formatter if there isn't one" — the old manual
--- fallback-to-gg=G here would have raced against lazy's keymap depending on
--- load order, so it's gone; conform's own fallback covers the same case more
--- reliably.
+-- ── Transparent background ────────────────────────────────────────────────────
+-- Clear background highlights so the terminal's transparency shows through.
+-- Covers the main editor area, inactive windows, nvim-tree, and lualine.
+vim.cmd([[hi Normal guibg=NONE ctermbg=NONE]])
+vim.cmd([[hi NormalNC guibg=NONE ctermbg=NONE]])
+vim.cmd([[hi NvimTreeNormal guibg=NONE]])
+vim.cmd([[hi NvimTreeEndOfBuffer guibg=NONE]])
+vim.cmd([[hi LualineNormal guibg=NONE]])
+vim.cmd([[hi LualineInactive guibg=NONE]])

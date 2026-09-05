@@ -1,5 +1,6 @@
 
-@import url("../theme/colors/colors.css");
+@define-color foreground #cdd6f4;
+@define-color background #181824;
 
 * {
 color: @foreground;
@@ -23,10 +24,10 @@ window#waybar
 .modules-left
 {
     border-radius: 7px;
-    border: 2px solid #30d158;
+    border: 2px solid #C0415A;
     margin: 0px 0px 3px 0px;
     background-color: @background;
-    box-shadow: 0px 0px 2px #12120a;
+    box-shadow: 0px 0px 2px #101010;
     transition-property: background-color;
     transition-duration: .5s;
     padding-left: 4px;
@@ -36,10 +37,10 @@ window#waybar
 .modules-center
 {
     border-radius: 7px;
-    border: 2px solid #30d158;
+    border: 2px solid #C0415A;
     margin: 0px 0px 3px 0px;
     background-color: @background;
-    box-shadow: 0px 0px 2px #12120a;
+    box-shadow: 0px 0px 2px #101010;
     transition-property: background-color;
     transition-duration: .5s;
 }
@@ -47,10 +48,10 @@ window#waybar
 .modules-right
 {
     border-radius: 7px;
-    border: 2px solid #30d158;
+    border: 2px solid #C0415A;
     margin: 0px 0px 3px 0px;
     background-color: @background;
-    box-shadow: 0px 0px 2px #12120a;
+    box-shadow: 0px 0px 2px #101010;
     transition-property: background-color;
     transition-duration: .5s;
     padding-right: 4px;
@@ -133,31 +134,10 @@ padding: 1px 4px;
 #custom-notification-silencing-indicator,
 #custom-updatespacman,
 #custom-screenrecording-indicator,
-#custom-active-window,
-#custom-quick-settings,
-#custom-net-speed,
 #custom-update {
 min-width: 12px;
 padding: 0 4px;
 margin: 1px 3px 1px 3px;
-}
-
-#custom-net-speed {
-font-size: 11px;
-opacity: 0.75;
-}
-
-#custom-active-window {
-font-weight: bold;
-opacity: 0.9;
-}
-
-#custom-quick-settings {
-font-size: 14px;
-}
-
-#custom-quick-settings:hover {
-opacity: 0.7;
 }
 
 #custom-logout {
@@ -203,7 +183,7 @@ tooltip
     padding: 4px;
     background: @background;
     font-size: 10px;
-    border: 1px solid #30d158;
+    border: 1px solid #C0415A;
     border-radius: 8px;
 }
 
@@ -219,7 +199,7 @@ margin: 0 0 0 2.5px;
 }
 
 #custom-voxtype.recording {
-color: #15e553;
+color: #a55555;
 }
 
 #custom-idle-indicator,
@@ -233,16 +213,16 @@ padding-bottom: 1px;
 
 #custom-idle-indicator.active,
 #custom-notification-silencing-indicator.active {
-color: #15e553;
+color: #a55555;
 }
 
 #custom-screenrecording-indicator.active {
-color: #15e553;
+color: #a55555;
 }
 
 #custom-idle-indicator.active,
 #custom-notification-silencing-indicator.active {
-color: #15e553;
+color: #a55555;
 }
 
 /* Specific animation Module */
@@ -254,7 +234,7 @@ color: transparent;
 }
 
 #custom-screenrecording-indicator.active {
-color: #f72a19;
+color: #eb7087;
 animation-name: blink-recording;
 animation-duration: 0.5s;
 }
@@ -287,26 +267,26 @@ animation-direction: alternate;
 {
     to
     {
-        color: #2d2b1b;
+        color: #4a4a4a;
     }
 }
 
 #cpu.warning,
 #battery.warning {
-color: #39ed0d;
+color: #c95d0f;
 }
 @keyframes blink2
 {
     to
     {
         background-color: transparent;
-        color: #65cc3a;
+        color: #f53c3c;
     }
 }
 
 #battery.critical:not(.charging) {
 background-color: transparent;
-color: #eccc15;
+color: #e6d8ba;
 animation-name: blink2;
 animation-duration: 0.5s;
 animation-timing-function: steps(12);
