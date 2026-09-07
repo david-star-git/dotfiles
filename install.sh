@@ -490,7 +490,7 @@ install_vlc() {
 # Edit hyprland.conf, keybinds.conf, autostart.conf, etc. there.
 install_hyprland() {
     info "Installing Hyprland..."
-    pacman_install hyprland cliphist awww hyprcursor tesseract tesseract-data-eng grim slurp wl-clipboard dolphin
+    pacman_install hyprland cliphist awww hyprcursor hyprlock tesseract tesseract-data-eng grim slurp wl-clipboard dolphin
     # tesseract-data-deu tesseract-data-spa
 
     info "Installing rofi (wayland fork)..."
@@ -499,6 +499,7 @@ install_hyprland() {
     info "Linking hyprland config..."
     mkdir -p "$ORIGINAL_HOME/.config"
     link "$SCRIPT_DIR/config/hypr" "$ORIGINAL_HOME/.config/hypr"
+    link "$SCRIPT_DIR/config/rofi" "$ORIGINAL_HOME/.config/rofi"
 
     info "Linking wallpapers..."
     link "$SCRIPT_DIR/wallpapers" "$ORIGINAL_HOME/wallpapers"

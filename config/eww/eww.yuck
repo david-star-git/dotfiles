@@ -12,6 +12,7 @@
 (defpoll max_brightness :interval "1s" "brightnessctl m")
 
 (defpoll volume :interval "1s" "pamixer --get-volume")
+(defpoll battery_name :interval "30s" "upower -e 2>/dev/null | grep -o 'BAT[0-9]*' | head -1")
 
 ;; State
 
@@ -35,6 +36,7 @@
         :class "container"
         (box :space-evenly false :hexpand true :class "section-container"
             (button :class "section selectable"
+                :onclick "rofi -show drun -no-default-config -config ~/.config/rofi/launchpad.rasi"
                 (image :image-width 20 :path "/usr/share/icons/WhiteSur/status/symbolic/start-here-symbolic.svg")
             )
             (box :class "section selectable activetitle"
@@ -74,9 +76,9 @@
                 )
                 (box :space-evenly false :spacing 8
                     (image
-                        :path "/usr/share/icons/WhiteSur/status/symbolic/battery-level-${round(EWW_BATTERY["BAT0"]["capacity"] / 10, 0) * 10}-${EWW_BATTERY["BAT0"]["status"] == "Charging" ? "charging-" : ""}symbolic.svg"
+                        :path "/usr/share/icons/WhiteSur/status/symbolic/battery-level-${round(EWW_BATTERY[battery_name]["capacity"] / 10, 0) * 10}-${EWW_BATTERY[battery_name]["status"] == "Charging" ? "charging-" : ""}symbolic.svg"
                     )
-                    "${EWW_BATTERY["BAT0"]["capacity"]}%"
+                    "${EWW_BATTERY[battery_name]["capacity"]}%"
                 )
             )
         )

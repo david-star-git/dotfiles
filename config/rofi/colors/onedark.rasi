@@ -1,0 +1,20 @@
+/**
+ *
+ * Onedark color scheme — standard Atom "One Dark" palette.
+ * Not part of what was uploaded (colors.rasi imports this by name but the
+ * file itself wasn't included) — filled in with the well-known stock
+ * values so confirm.rasi has something to resolve. Swap freely during the
+ * real theming pass.
+ *
+ **/
+
+* {
+    background:             #282c34;
+    background-alt:         #21252b;
+    foreground:             #abb2bf;
+    selected:               #61afef;
+    active:                 #98c379;
+    urgent:                 #e06c75;
+
+    background-color:       @background;
+}
