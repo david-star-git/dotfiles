@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# hyprland-activewindow — streams the focused window as JSON, one line per
+# change, to stdout. eww.yuck's `(deflisten windows "./scripts/bin/hyprland-
+# activewindow _")` expects an executable at this exact path — there's no
+# such binary in the upstream repo (only hyprland-minimize and hyprland-
+# tasks have Cargo projects there; this one was never published, or is
+# built some other way not included in what got shared). This is a plain
+# shell equivalent, not a Rust rewrite — same output shape (`windows[0].
+# title`), same path, nothing in eww.yuck had to change for it to work.
+set -euo pipefail
+
+emit() {
+    hyprctl activewindow -j 2>/dev/null | \
+        jq -c '[{title: (.title // .initialTitle // .class // "Desktop")}]' 2>/dev/null || \
+        echo '[{"title":"Desktop"}]'
+}
+
+emit  # initial value, so the bar isn't blank before the first event
+
+socket="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
+
+socat -U - UNIX-CONNECT:"$socket" | while IFS= read -r line; do
+    case "$line" in
+        activewindow\>\>*|activewindowv2\>\>*|closewindow\>\>*)
+            emit
+            ;;
+    esac
+done

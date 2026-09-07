@@ -1,26 +1,17 @@
-;; =============================================================================
-;; control_center.yuck — the one popover, opened from either the tray icons
-;; or the clock. Layout adapted from 223230/eww-mac-shell's control_center.yuck
-;; (icon-tile buttons + sliders); the tile row itself, Tor, DND, power
-;; profile, battery line, and the network/bluetooth scan panels are ours.
-;;
-;; Each of Wi-Fi/Bluetooth has two click targets on the same row: the
-;; icon+label toggles the radio on/off (like real macOS Control Center),
-;; the chevron on the right opens the detailed scan+connect panel.
-;; =============================================================================
-
 (defwindow control_center
     :monitor 0
     :exclusive false
-    :geometry (geometry :width "320px" :y "-16px" :x "32px" :anchor "top right")
+    :geometry (geometry :width "460px" :y "-16px" :x "32px" :anchor "top right")
     :stacking "fg"
     :wm-ignore false
     :class "dark"
     (revealer :reveal control_center_open :transition "none"
         (eventbox :onhoverlost "eww update control_center_open='false'"
         (box :class "container" :space-evenly false :spacing 16 :orientation "vertical"
-            (label :class "date" :xalign 0 :text {formattime(EWW_TIME, "%A, %B %e")})
-            (quick_settings)
+            (box :spacing 16
+                (quick_settings)
+                (box :class "control")
+            )
             (box
                 :class "slider control"
                 :orientation "vertical"
@@ -35,121 +26,47 @@
                 :space-evenly false
                 :spacing 8
                 (label :xalign 0 :text "Sound")
-                (scale :class "scale" :value volume :min 0 :max 100 :onchange "pamixer --set-volume {}")
+                (scale :class "scale" :value volume :min 0 :max 100 :onchange "pamixer --set-volume {} && eww update volume='{}'")
             )
-            (box :orientation "horizontal" :space-evenly false :spacing 6 :class "footer"
-                (label :class "muted" :xalign 0 :hexpand true :text battery_summary)
-                (button :class "muted" :onclick "~/.config/hypr/scripts/launch-audio.py" "Sound Settings")))
+        )
         )
     )
 )
 
 (defwidget quick_settings[]
-    (box :orientation "vertical" :spacing 8
-        (box :class "control" :orientation "vertical" :spacing 16
-            (tile-row :onclick "scripts/wifi-toggle.sh" :onchevron "eww open --toggle network-panel"
-                :icon "network-wireless-${wifi_enabled != "1" ? "disabled" : wifi_strength > 66 ? "signal-excellent" : "signal-ok"}-symbolic"
-                :label "Wi-Fi"
-                :purple false
-                :sublabel {wifi_enabled != "1" ? "Off" : strlength(wifi_name) > 16 ? captures(wifi_name, ".{0,16}")[0][0] + "…" : wifi_name})
-            (tile-row :onclick "scripts/bluetooth-toggle.sh" :onchevron "eww open --toggle bluetooth-panel"
-                :icon "bluetooth-${bt_enabled == "1" ? "active" : "disabled"}-symbolic"
-                :label "Bluetooth"
-                :purple false
-                :sublabel {bt_status})
-            (tile-row :onclick "~/.config/hypr/scripts/dnd.py --toggle" :onchevron ""
-                :icon "notifications-disabled-symbolic"
-                :label "Do Not Disturb"
-                :purple false
-                :sublabel {dnd_mode == "off" ? "Off" : "On"})
-            (tile-row :onclick "scripts/power-profile-cycle.sh" :onchevron ""
-                :icon "power-profile-${power_profile}-symbolic"
-                :label "Power Profile"
-                :purple false
-                :sublabel {power_profile})
-            (tile-row :onclick {tor_status == "off" ? "~/.scripts/tor/tor-toggle.sh on" : "~/.scripts/tor/tor-toggle.sh off"} :onchevron ""
-                :icon "security-high-symbolic"
-                :label "Tor"
-                :sublabel {tor_status == "off" ? "Off" : tor_status == "connecting" ? "Connecting…" : "Connected"}
-                :purple {tor_status == "connected"}))))
-
-;; A single Control-Center-style row: icon in a colored circle, label +
-;; sublabel, and an optional chevron that opens a detail panel. purple
-;; recolors the icon circle for Tor's verified-connected state.
-(defwidget tile-row [icon label sublabel onclick onchevron purple]
-  (box :space-evenly false :spacing 4
-    (button :class "tile-main" :hexpand true :onclick onclick
-      (box :space-evenly false :spacing 12
-        (box :class "icon ${purple ? "icon-purple" : ""}" :valign "center"
-          (image :image-width 15 :path "${ICONS}/status/symbolic/${icon}.svg"))
-        (box :orientation "vertical"
-          (label :xalign 0 :text label)
-          (label :xalign 0 :class "muted" :text sublabel))))
-    (button :class "tile-chevron" :visible {onchevron != ""} :onclick onchevron "›")))
-
-;; ── Network panel (Wi-Fi scan + connect) ─────────────────────────────────────
-;; Opened via the chevron on the Wi-Fi tile above.
-;; Known limitation: a password containing a single-quote won't pass through
-;; the shell command built here correctly — retype without it if that happens.
-(defwindow network-panel
-    :monitor 0
-    :exclusive false
-    :geometry (geometry :width "320px" :y "-16px" :x "32px" :anchor "top right")
-    :stacking "fg"
-    :wm-ignore false
-    :class "dark"
-    (box :class "container" :orientation "vertical" :space-evenly false :spacing 8
-        (box :orientation "horizontal" :space-evenly false :spacing 6
-            (label :text "Wi-Fi" :class "panel-heading" :xalign 0 :hexpand true)
-            (button :class "muted" :onclick "eww poll wifi_networks" "Refresh"))
-        (scroll :height 280 :hscroll false
-            (box :orientation "vertical" :space-evenly false :spacing 4
-                (for network in wifi_networks
-                    (wifi-tile :ssid {network.ssid}
-                               :signal {network.signal}
-                               :secured {network.secured}
-                               :active {network.active}))))))
-
-(defwidget wifi-tile [ssid signal secured active]
-  (box :orientation "vertical" :space-evenly false :spacing 2 :class "net-tile"
-    (eventbox :onclick "scripts/wifi-connect.sh '${ssid}'"
-      (box :orientation "horizontal" :space-evenly false :spacing 8 :class "net-tile-row ${active ? "net-tile-active" : ""}"
-        (image :image-width 14 :path "${ICONS}/status/symbolic/network-wireless-signal-${secured ? "excellent-secure" : "excellent"}-symbolic.svg")
-        (label :text ssid :xalign 0 :hexpand true :limit-width 20 :class "net-tile-label")
-        (label :text "${signal}%" :class "net-tile-signal")))
-    (revealer :reveal {wifi_failed_ssid == ssid} :transition "slidedown" :duration "150ms"
-      (box :orientation "horizontal" :space-evenly false :spacing 4 :class "net-tile-password-row"
-        (input :class "net-tile-password-input" :value wifi_password_input :password true
-               :onchange "eww update wifi_password_input={}")
-        (button :class "muted" :onclick "scripts/wifi-connect.sh '${ssid}' '${wifi_password_input}'" "Connect")))))
-
-;; ── Bluetooth panel (scan + pair/connect) ────────────────────────────────────
-;; Opened via the chevron on the Bluetooth tile above. Some devices need
-;; interactive PIN/passkey confirmation bluetoothctl can't answer
-;; non-interactively — those will fail here; most audio/keyboard "just
-;; works" devices pair fine.
-(defwindow bluetooth-panel
-    :monitor 0
-    :exclusive false
-    :geometry (geometry :width "320px" :y "-16px" :x "32px" :anchor "top right")
-    :stacking "fg"
-    :wm-ignore false
-    :class "dark"
-    (box :class "container" :orientation "vertical" :space-evenly false :spacing 8
-        (box :orientation "horizontal" :space-evenly false :spacing 6
-            (label :text "Bluetooth" :class "panel-heading" :xalign 0 :hexpand true)
-            (button :class "muted" :onclick "eww poll bt_devices" "Scan"))
-        (scroll :height 280 :hscroll false
-            (box :orientation "vertical" :space-evenly false :spacing 4
-                (for device in bt_devices
-                    (bt-tile :mac {device.mac}
-                             :name {device.name}
-                             :paired {device.paired}
-                             :connected {device.connected}))))))
-
-(defwidget bt-tile [mac name paired connected]
-  (eventbox :onclick "scripts/bluetooth-connect.sh '${mac}'"
-    (box :orientation "horizontal" :space-evenly false :spacing 8 :class "net-tile-row ${connected ? "net-tile-active" : ""}"
-      (image :image-width 14 :path "${ICONS}/status/symbolic/bluetooth-${connected ? "active" : paired ? "paired" : "disconnected"}-symbolic.svg")
-      (label :text name :xalign 0 :hexpand true :limit-width 20 :class "net-tile-label")
-      (label :text {connected ? "Connected" : paired ? "Paired" : ""} :class "net-tile-signal"))))
+    (box :class "control" :orientation "vertical" :spacing 16
+        (button
+            (box :space-evenly false :spacing 12
+                (box :class "icon" :valign "center"
+                    (image :image-width 21 :path "/usr/share/icons/WhiteSur-dark/status/symbolic/network-wireless-signal-excellent-symbolic.svg")
+                )
+                (box :orientation "vertical"
+                    (label :xalign 0 :text "Wi-Fi")
+                    (label :xalign 0 :class "muted" :text "${strlength(wifi_name) > 13 ? captures(wifi_name, '.{0,12}')[0][0] + "..." : wifi_name}")
+                )
+            )
+        )
+        (button
+            (box :space-evenly false :spacing 12
+                (box :class "icon" :valign "center"
+                    (image :image-width 21 :path "/usr/share/icons/WhiteSur-dark/status/symbolic/bluetooth-active-symbolic.svg")
+                )
+                (box :orientation "vertical"
+                    (label :xalign 0 :text "Bluetooth")
+                    (label :xalign 0 :class "muted" :text "On")
+                )
+            )
+        )
+        (button
+            (box :space-evenly false :spacing 12
+                (box :class "icon" :valign "center"
+                    (image :image-width 21 :path "/usr/share/icons/WhiteSur-dark/devices/symbolic/network-server-symbolic.svg")
+                )
+                (box :orientation "vertical"
+                    (label :xalign 0 :text "Connect")
+                    (label :xalign 0 :class "muted" :text "Pixel 4a")
+                )
+            )
+        )
+    )
+)

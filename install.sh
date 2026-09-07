@@ -513,8 +513,10 @@ install_hyprland() {
 
 # --- eww bar ---
 # Installs eww (ElKowars wacky widgets) and the full daemon/service stack it
-# needs. eww is the ENTIRE bar now (top panel + Quick Settings + network/
-# bluetooth panels) — there's no separate waybar. Packages that expose a
+# needs. eww is the ENTIRE bar now — there's no separate waybar. The bar
+# itself (config/eww/eww.yuck, control_center.yuck, eww.scss) is a close
+# copy of https://github.com/223230/eww-mac-shell — top panel + one Control
+# Center popover, nothing more added on top yet. Packages that expose a
 # systemd service are enabled immediately so they are available as soon as
 # eww scripts run.
 #
@@ -585,6 +587,14 @@ install_eww() {
     link "$SCRIPT_DIR/config/eww" "$ORIGINAL_HOME/.config/eww"
     link "$SCRIPT_DIR/config/wlogout" "$ORIGINAL_HOME/.config/wlogout"
     link "$SCRIPT_DIR/config/mako" "$ORIGINAL_HOME/.config/mako"
+
+    # The bar's yuck files hardcode /usr/share/icons/WhiteSur[-dark]/... —
+    # that's the upstream repo's own convention (see config/eww/eww.yuck),
+    # left untouched. Point both names at our vendored icon set so those
+    # paths resolve; for these monochrome status-bar glyphs the accent
+    # variant makes no visible difference.
+    sudo ln -sfn "$SCRIPT_DIR/config/theme/icons/WhiteSur-green-dark" /usr/share/icons/WhiteSur
+    sudo ln -sfn "$SCRIPT_DIR/config/theme/icons/WhiteSur-green-dark" /usr/share/icons/WhiteSur-dark
 
     ok "eww bar done"
 }

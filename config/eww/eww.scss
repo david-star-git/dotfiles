@@ -1,43 +1,21 @@
-// =============================================================================
-// eww.scss — top bar + Control Center + network/bluetooth panels.
-//
-// Structure adapted from 223230/eww-mac-shell's eww.scss (it even left a
-// commented-out dark palette at the top — this is that palette, filled in
-// and matched to our macglass values + green accent instead).
-//
-// Eww auto-assigns each window's `defwindow NAME` as a CSS class on its
-// root widget, so `.panel`, `.control_center`, `.network-panel`, and
-// `.bluetooth-panel` below are NOT arbitrary — they scope to those windows
-// by name, same convention the source repo uses.
-//
-// Palette source of truth is config/theme/colors/palette.toml — these are
-// kept as literal values (eww's scss preprocessor can't @import our GTK
-// colors.css) — small fixed list, quick to keep in sync by hand.
-// =============================================================================
-
-$color-fg:                #e5e5e7;
-$color-fg-muted:           #a1a1a6;
-$color-fg-silent:          #6e6e73;
-$color-bg:                 rgba(26, 26, 28, 0.72);
-$color-bg-overlay:         rgba(255, 255, 255, 0.06);
-$color-bg-overlay-intense: rgba(255, 255, 255, 0.11);
-$color-bg-opaque:          rgba(40, 40, 43, 1);
-$color-bg-slider:          rgba(0, 0, 0, 0.25);
-$color-accent:             #30d158;
-$color-purple:             #bf5af2;
-
-* {
-    font-family: "SF Pro Display", "JetBrains Mono Nerd Font", sans-serif;
-}
+$color-fg: #fff;
+$color-fg-muted: #eee;
+$color-fg-silent: #ddd;
+$color-bg: rgba(#000, 0.5);
+$color-bg-overlay: rgba(#fff, 0.1);
+$color-bg-overlay-intense: rgba(#fff, 0.15);
+$color-bg-opaque: rgba(#fff, 1);
+$color-bg-slider: rgba(#fff, 0.2);
+$color-accent: rgb(10, 132, 255);
 
 .panel {
     $outer-padding: 0px;
     $inter-item-spacing: 0px;
-    $rounding: 6px;
+    $rounding: 4px;
 
     background-color: $color-bg;
     color: $color-fg;
-
+    font-family: 'Inter';
     .container {
         padding: 0px $outer-padding;
     }
@@ -71,175 +49,88 @@ $color-purple:             #bf5af2;
     .activetitle, .selectable {
         padding: 4px 16px;
     }
-    .net-speed-label {
-        color: $color-fg-silent;
-        font-size: 11px;
-        padding-right: 2px;
+    .taskbar {
+        .entry {
+            padding: $outer-padding;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
     }
 }
-
-.control_center, .network-panel, .bluetooth-panel {
+.control_center {
+    $slider-height: 26px;
     $rounding: 16px;
 
     background: transparent;
     color: $color-fg;
     font-weight: 500;
-    font-size: 14px;
-
+    font-size: 16px;
     .muted {
         color: $color-fg-silent;
         font-weight: 400;
         font-size: 12px;
-        background: transparent;
-        border: 0;
-        padding: 2px 4px;
-        border-radius: 6px;
-        &:hover {
-            background: $color-bg-overlay;
-            color: $color-fg;
-        }
     }
-    .date {
-        color: $color-fg-muted;
-        font-size: 12px;
-        padding: 0 4px;
-    }
-    .footer {
-        padding: 0 4px;
-    }
-    .container {
-        background: $color-bg;
-        border-radius: $rounding + 8;
-        box-shadow:
-            0px 0px 16px 0px rgba(0, 0, 0, 0.35),
-            0px 0px 1px 1px rgba(255, 255, 255, 0.06);
-        margin: 32px;
-        padding: 16px;
-    }
-    .panel-heading {
-        color: $color-fg;
-        font-size: 14px;
-        font-weight: bold;
-        padding: 0 4px;
-    }
-}
-
-.control_center {
-    $slider-height: 24px;
-
     .control {
-        padding: 4px;
+        padding: 16px;
         background: $color-bg-overlay;
         border-radius: $rounding;
-        box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.25);
-    }
-
-    // ── Control Center tile rows (Wi-Fi, Bluetooth, DND, Power, Tor) ────────
-    .tile-main {
-        color: $color-fg;
-        font-weight: 500;
-        background: transparent;
-        border: 0;
-        padding: 8px;
-        border-radius: 10px;
-        &:hover {
-            background: $color-bg-overlay-intense;
-        }
-        .icon {
-            border-radius: 100%;
-            padding: 6px;
-            background: $color-accent;
-        }
-        .icon-purple {
-            background: $color-purple;
-        }
-    }
-    .tile-chevron {
-        color: $color-fg-silent;
-        font-size: 16px;
-        background: transparent;
-        border: 0;
-        padding: 8px 4px;
-        border-radius: 10px;
-        &:hover {
-            background: $color-bg-overlay-intense;
+        box-shadow: 0px 4px 8px 0px rgba(#000, .2);
+        button {
             color: $color-fg;
+            font-weight: 500;
+            background: transparent;
+            border: 0;
+            padding: 0;
+            .icon {
+                border-radius: 100%;
+                padding: 6px;
+                background: $color-accent;
+            }
         }
     }
-
     .slider {
-        padding: 4px;
-        background: $color-bg-overlay;
-        border-radius: $rounding;
-        box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.25);
-        label {
-            padding: 4px 4px 0 4px;
+        padding-top: 12px;
+        .edge {
+            min-width: $slider-height;
+            min-height: $slider-height;
+            background: $color-bg-slider;
         }
-        .scale {
+        .scale {           
             margin: 0;
             padding: 1px;
             background: $color-bg-slider;
             min-height: $slider-height + 2px;
             border-radius: $slider-height;
+            padding: 0;
             trough {
                 background: none;
                 min-height: $slider-height;
                 border-radius: $slider-height;
                 margin: 0 $slider-height / 2 - 1px;
             }
-            highlight {
+            highlight {                                
                 min-width: $slider-height;
                 min-height: $slider-height;
                 border-top-left-radius: $slider-height / 2;
                 border-bottom-left-radius: $slider-height / 2;
-                background: $color-accent;
+                background: $color-bg-opaque;
                 margin: 0px -$slider-height / 2 + 2px;
             }
             slider {
                 min-width: $slider-height;
                 min-height: $slider-height;
-                background: $color-bg-opaque;
-                box-shadow: 0px 0px 1px 1px rgba(0, 0, 0, 0.3), 0px 0px 4px 0px rgba(0, 0, 0, 0.3);
+                box-shadow: 0px 0px 1px 1px rgba(#000, .1), 0px 0px 4px 0px rgba(#000, .2);
             }
         }
     }
-}
-
-// ── Network / Bluetooth scan panels ───────────────────────────────────────────
-.network-panel, .bluetooth-panel {
-    .net-tile {
-        border-radius: 8px;
-    }
-    .net-tile-row {
-        min-height: 20px;
-        padding: 6px 8px;
-        border-radius: 8px;
-        &:hover {
-            background: $color-bg-overlay;
-        }
-    }
-    .net-tile-active {
-        .net-tile-label {
-            color: $color-accent;
-            font-weight: bold;
-        }
-    }
-    .net-tile-label {
-        color: $color-fg;
-        font-size: 12px;
-    }
-    .net-tile-signal {
-        color: $color-fg-silent;
-        font-size: 11px;
-    }
-    .net-tile-password-row {
-        padding: 2px 8px 4px 30px;
-    }
-    .net-tile-password-input {
-        background-color: $color-bg-slider;
-        color: $color-fg;
-        border-radius: 6px;
-        padding: 2px 6px;
-        min-width: 140px;
+    .container {
+        background: $color-bg;
+        border-radius: $rounding + 8;
+        box-shadow:
+            0px 0px 16px 0px rgba(#000, .2),
+            0px 0px 1px 1px rgba(#000, .2);
+        margin: 32px;
+        padding: 16px;
     }
 }
