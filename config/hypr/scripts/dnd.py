@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dnd.py - DND mode toggle for waybar + mako
+dnd.py - DND mode toggle for the eww bar + mako
 Modes:
   off    - normal notifications  (makoctl mode: default)
   dnd    - hide all except critical (makoctl mode: default dnd)
@@ -41,7 +41,7 @@ def main():
     arg = sys.argv[1] if len(sys.argv) > 1 else "--status"
     mode = get_mode()
     if arg == "--status":
-        # Always print something so waybar never shows a blank
+        # Always print something so the bar never shows a blank
         print(ICONS.get(mode, ICONS["off"]), flush=True)
     elif arg == "--toggle":
         if mode == "dnd":

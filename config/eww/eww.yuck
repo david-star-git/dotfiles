@@ -1,0 +1,113 @@
+;; =============================================================================
+;; eww.yuck — the top bar.
+;;
+;; Structure and mechanics adapted from https://github.com/223230/eww-mac-shell
+;; (README credits it as trademark-clean, "no assets lifted from macOS" — we
+;; keep that; icons come from our own vendored WhiteSur-green-dark set).
+;; Its Dock (Rust binaries for window-minimize previews + running-app list)
+;; was left out on purpose — too much moving, uncompiled, untested Rust to
+;; wire in blind. Everything else here is either copied close to verbatim
+;; or extended with our own features (Tor, Wi-Fi/Bluetooth scan+connect,
+;; network speed, power profile, DND).
+;;
+;; Icons: ICONS below is the base path to our vendored icon set. All :path
+;; values are "${ICONS}/category/symbolic/name-symbolic.svg".
+;; =============================================================================
+
+(defvar ICONS "~/.local/share/icons/WhiteSur-green-dark")
+
+;; ── Live data ────────────────────────────────────────────────────────────────
+(defpoll active_window    :interval "1s"  "~/.config/hypr/scripts/active-window.sh")
+(defpoll wifi_name        :interval "3s"  "nmcli -t -f name connection show --active | head -1")
+(defpoll wifi_strength    :interval "3s"  "nmcli -f IN-USE,SIGNAL device wifi | awk '/^\\*/{if (NR!=1) {print $2}}'")
+(defpoll wifi_enabled     :interval "5s"  "scripts/wifi-enabled.sh")
+(defpoll wifi_ssid        :interval "5s"  "scripts/wifi-ssid.sh")
+(defpoll bt_enabled       :interval "5s"  "scripts/bluetooth-enabled.sh")
+(defpoll bt_status        :interval "5s"  "scripts/bluetooth-status.sh")
+(defpoll hour             :interval "1s"  "date '+%a %b %_d  %_H:%M'")
+(defpoll brightness       :interval "2s"  "brightnessctl g")
+(defpoll max_brightness   :interval "2s"  "brightnessctl m")
+(defpoll volume           :interval "2s"  "pamixer --get-volume")
+(defpoll net_speed        :interval "2s"  "~/.config/hypr/scripts/net-speed.sh")
+(defpoll power_profile    :interval "5s"  "scripts/power-profile-get.sh")
+(defpoll battery_summary  :interval "30s" "scripts/battery-info.sh")
+(defpoll dnd_mode         :interval "5s"  "cat ~/.cache/dnd-mode 2>/dev/null || echo off")
+(defpoll tor_status       :interval "10s" "scripts/tor-status.sh")
+
+;; ── Network / Bluetooth panel data ───────────────────────────────────────────
+(defpoll wifi_networks    :interval "15s" "scripts/wifi-scan.sh")
+(defpoll wifi_failed_ssid :interval "1s"  "cat ~/.cache/wifi-connect-failed-ssid 2>/dev/null || true")
+(defpoll bt_devices       :interval "15s" "scripts/bluetooth-scan.sh")
+(defvar wifi_password_input "")
+
+;; ── State ─────────────────────────────────────────────────────────────────────
+(defvar control_center_open false)
+
+;; ── Imports ───────────────────────────────────────────────────────────────────
+(include "./control_center.yuck")
+
+(defwindow panel
+    :monitor 0
+    :exclusive true
+    :geometry (geometry :width "100%" :anchor "top center")
+    :stacking "fg"
+    :reserve (struts :distance "40px" :side "top")
+    :windowtype "dock"
+    :wm-ignore false
+    :class "dark"
+    (box
+        :space-evenly false
+        :class "container"
+        (box :space-evenly false :hexpand true :class "section-container"
+            (button :class "section selectable"
+                :onclick "eww open --toggle control_center"
+                (image :image-width 16 :path "${ICONS}/status/symbolic/start-here-symbolic.svg")
+            )
+            (box :class "section selectable activetitle"
+                active_window
+            )
+        )
+        (box :space-evenly false :class "section-container"
+            (tray)
+            (box
+                :class "section"
+                :space-evenly false
+                (button
+                    :class "selectable"
+                    :onclick "eww open --toggle control_center"
+                    hour
+                )
+            )
+        )
+    )
+)
+
+(defwidget tray[]
+    (box
+        :class "section"
+        (button
+            :class "selectable"
+            :onclick "eww update control_center_open='${!control_center_open}'"
+            (box :spacing 16 :space-evenly false
+                (box :space-evenly false :class "net-speed-label" net_speed)
+                (image
+                    :tooltip "${volume}%"
+                    :path "${ICONS}/status/symbolic/audio-volume-${volume > 100 ? "overamplified" : volume > 66 ? "high" : volume > 33 ? "medium" : volume > 0 ? "low" : "muted"}-symbolic.svg"
+                )
+                (image
+                    :tooltip {wifi_enabled == "1" ? wifi_strength + "%" : "Wi-Fi off"}
+                    :path "${ICONS}/status/symbolic/network-wireless-${wifi_enabled != "1" ? "disabled" : wifi_strength == "" ? "offline" : wifi_strength > 66 ? "signal-excellent" : wifi_strength > 33 ? "signal-ok" : "signal-weak"}-symbolic.svg")
+                (image
+                    :tooltip {bt_status}
+                    :path "${ICONS}/status/symbolic/bluetooth-${bt_enabled == "1" ? "active" : "disabled"}-symbolic.svg"
+                )
+                (box :space-evenly false :spacing 6
+                    (image
+                        :path "${ICONS}/status/symbolic/battery-level-${round(EWW_BATTERY["BAT0"]["capacity"] / 10, 0) * 10}-${EWW_BATTERY["BAT0"]["status"] == "Charging" ? "charging-" : ""}symbolic.svg"
+                    )
+                    "${EWW_BATTERY["BAT0"]["capacity"]}%"
+                )
+            )
+        )
+    )
+)

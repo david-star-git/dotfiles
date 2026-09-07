@@ -47,9 +47,9 @@ WIDGET_WIDTH    = 280
 TARGET_CENTER_X = 2217
 TARGET_TOP_Y    = 3
 C_BG      = "rgba(17, 17, 27, 0.90)"
-C_SURFACE = "#1e1e2e"
-C_TEXT    = "#cdd6f4"
-C_ACCENT  = "#c0415a"
+C_SURFACE = "#1a1a1c"
+C_TEXT    = "#e5e5e7"
+C_ACCENT  = "#30d158"
 
 STREAM_LINGER_S  = 120
 DRAG_SETTLE_MS   = 500

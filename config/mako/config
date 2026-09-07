@@ -17,10 +17,10 @@ border-radius=5
 font=monospace 10
 
 # ── Colors (default / normal urgency) ────────────────────────────────────────
-background-color=#11111be6
-border-color=#c0415a
-text-color=#cdd6f4
-progress-color=over #c0415a
+background-color=#131315e6
+border-color=#30d158
+text-color=#e5e5e7
+progress-color=over #30d158
 
 # ── Behaviour ─────────────────────────────────────────────────────────────────
 default-timeout=6000
@@ -30,23 +30,23 @@ format=<b>%s</b>\n%b
 
 # ── Urgency: normal ───────────────────────────────────────────────────────────
 [urgency=normal]
-background-color=#11111be6
-border-color=#c0415a
-text-color=#cdd6f4
+background-color=#131315e6
+border-color=#30d158
+text-color=#e5e5e7
 default-timeout=6000
 
 # ── Urgency: low ─────────────────────────────────────────────────────────────
 [urgency=low]
-background-color=#11111be6
-border-color=#6e3848
-text-color=#a6adc8
+background-color=#131315e6
+border-color=#511919
+text-color=#a1a1a6
 default-timeout=4000
 
 # ── Urgency: critical ────────────────────────────────────────────────────────
 [urgency=critical]
-background-color=#1e1e2e
-border-color=#f38ba8
-text-color=#cdd6f4
+background-color=#1a1a1c
+border-color=#ff453a
+text-color=#e5e5e7
 default-timeout=0
 
 # ── DND mode: hide everything except critical ─────────────────────────────────

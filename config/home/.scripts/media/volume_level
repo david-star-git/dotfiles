@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# volume_level — shows a volume OSD via mako (progress-bar notification).
+# Called after volume_control / a mute toggle so the HUD reflects the change.
+set -euo pipefail
+
+vol=$(pactl get-sink-volume @DEFAULT_SINK@ | grep -oP '\d+(?=%)' | head -1)
+muted=$(pactl get-sink-mute @DEFAULT_SINK@ | grep -oP '(?<=Mute: )\w+')
+
+if [[ "$muted" == "yes" ]]; then
+    icon="audio-volume-muted"
+    body="Muted"
+    value=0
+else
+    if   (( vol == 0 ));  then icon="audio-volume-muted"
+    elif (( vol < 34 ));  then icon="audio-volume-low"
+    elif (( vol < 67 ));  then icon="audio-volume-medium"
+    else                       icon="audio-volume-high"
+    fi
+    body="${vol}%"
+    value=$vol
+fi
+
+notify-send -a "volume" -u low -i "$icon" \
+    -h string:x-canonical-private-synchronous:volume \
+    -h int:value:"$value" \
+    "Volume" "$body"
