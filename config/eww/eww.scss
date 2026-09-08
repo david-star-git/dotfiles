@@ -49,6 +49,13 @@ $color-accent: rgb(10, 132, 255);
     .activetitle, .selectable {
         padding: 4px 16px;
     }
+    .logo-button {
+        // logo.svg is edge-to-edge art with no internal margin — a touch
+        // of extra vertical padding keeps it from looking cramped against
+        // the bar's top/bottom edges the way icons with built-in
+        // breathing room don't need.
+        padding: 8px 16px;
+    }
     .taskbar {
         .entry {
             padding: $outer-padding;

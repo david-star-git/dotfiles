@@ -35,9 +35,9 @@
         :space-evenly false
         :class "container"
         (box :space-evenly false :hexpand true :class "section-container"
-            (button :class "section selectable"
+            (button :class "section selectable logo-button"
                 :onclick "rofi -show drun -no-default-config -config ~/.config/rofi/launchpad.rasi"
-                (image :image-width 20 :path "/usr/share/icons/WhiteSur/status/symbolic/start-here-symbolic.svg")
+                (image :image-width 15 :path "~/.config/eww/assets/logo.svg")
             )
             (box :class "section selectable activetitle"
                 "${windows[0].title}"

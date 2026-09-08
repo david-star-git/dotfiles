@@ -1,6 +1,10 @@
 /* MACOS LAUNCHPAD LIKE THEME FOR ROFI */
 /* Author: Newman Sanchez (https://github.com/newmanls) */
 
+configuration {
+    show-icons: true;
+}
+
 * {
     font: "Montserrat 9";
 
