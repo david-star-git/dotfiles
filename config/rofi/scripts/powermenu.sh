@@ -18,20 +18,23 @@ uptime="`uptime -p | sed -e 's/up //g'`"
 host=`hostname`
 
 # Options
-shutdown=''
-reboot=''
-lock=''
-suspend=''
-logout=''
-yes=''
-no=''
+shutdown=''  # power-off
+reboot=''  # refresh
+lock=''  # lock
+suspend=''  # moon (sleep)
+logout=''  # sign-out
+yes=''  # check
+no=''  # times
 
 # Rofi CMD
 rofi_cmd() {
 	rofi -dmenu \
 		-p "Goodbye ${USER}" \
 		-mesg "Uptime: $uptime" \
-		-theme ${dir}/${theme}.rasi
+		-theme ${dir}/${theme}.rasi \
+		-kb-custom-1 's' \
+		-kb-custom-2 'l' \
+		-kb-custom-3 'r'
 }
 
 # Confirmation CMD
@@ -82,8 +85,28 @@ run_cmd() {
 	fi
 }
 
+do_lock() {
+	if [[ -x '/usr/bin/hyprlock' ]]; then
+		hyprlock
+	elif [[ -x '/usr/bin/betterlockscreen' ]]; then
+		betterlockscreen -l
+	elif [[ -x '/usr/bin/i3lock' ]]; then
+		i3lock
+	fi
+}
+
 # Actions
+# Bare s/l/r (bound above via -kb-custom-N) act like picking that item and
+# pressing Enter — same confirmation flow, just without navigating the
+# list first. Lock has no confirmation step, same as selecting it normally.
 chosen="$(run_rofi)"
+rc=$?
+case $rc in
+	10) run_cmd --shutdown; exit 0 ;;
+	11) do_lock; exit 0 ;;
+	12) run_cmd --reboot; exit 0 ;;
+esac
+
 case ${chosen} in
     $shutdown)
 		run_cmd --shutdown
@@ -92,13 +115,7 @@ case ${chosen} in
 		run_cmd --reboot
         ;;
     $lock)
-		if [[ -x '/usr/bin/hyprlock' ]]; then
-			hyprlock
-		elif [[ -x '/usr/bin/betterlockscreen' ]]; then
-			betterlockscreen -l
-		elif [[ -x '/usr/bin/i3lock' ]]; then
-			i3lock
-		fi
+		do_lock
         ;;
     $suspend)
 		run_cmd --suspend
