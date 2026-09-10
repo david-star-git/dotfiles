@@ -397,6 +397,41 @@ install_theme() {
     ok "theme done"
 }
 
+# --- sddm ---
+# macOS Big Sur-style SDDM login theme (vinceliuice/WhiteSur-kde's sddm/
+# component, dark variant, accent recolored to our systemGreen #30D158).
+#
+# Vendored rather than fetched live: their installer picks a QML API
+# variant by detecting the installed Plasma version, which doesn't apply
+# here (no Plasma) and always falls back to the newest (6.2) anyway — so
+# this repo just ships that variant pre-selected, pre-renamed exactly the
+# way their own installer's `-dark` pass would rename it.
+#
+# Copied (not symlinked) into /usr/share/sddm/themes — the sddm greeter
+# runs as its own locked-down system user that can't traverse into a
+# regular user's home directory to follow a symlink back to this repo.
+#
+# Does NOT enable/switch your display manager — only installs the theme
+# and points SDDM's config at it. If you're not already using SDDM, this
+# won't do anything until you switch to it yourself:
+#   sudo systemctl disable <your-current-display-manager>
+#   sudo systemctl enable sddm
+install_sddm() {
+    info "Installing SDDM + Qt6 QML greeter deps..."
+    pacman_install sddm qt6-svg qt6-declarative qt6-quickcontrols2 qt6-multimedia
+
+    info "Installing WhiteSur-dark SDDM theme..."
+    sudo rm -rf /usr/share/sddm/themes/WhiteSur-dark
+    sudo cp -r "$SCRIPT_DIR/config/sddm/WhiteSur-dark" /usr/share/sddm/themes/WhiteSur-dark
+    sudo chmod -R a+rX /usr/share/sddm/themes/WhiteSur-dark
+
+    info "Activating theme..."
+    sudo mkdir -p /etc/sddm.conf.d
+    printf '[Theme]\nCurrent=WhiteSur-dark\n' | sudo tee /etc/sddm.conf.d/theme.conf >/dev/null
+
+    ok "sddm done"
+}
+
 # --- security ---
 # Hardens the system in three layers:
 #   1. UFW firewall  — deny all inbound by default, allow all outbound
@@ -618,6 +653,7 @@ main() {
         "eww:eww bar + full widget stack:off" \
         "neomutt:neomutt + full mail stack:off" \
         "theme:Kvantum + GTK + fonts:on" \
+        "sddm:macOS-style SDDM login theme:off" \
         "security:UFW + sysctl + Tor:off" \
         "fastfetch:fastfetch system info:on" \
         "vlc:VLC media player:off"
@@ -640,6 +676,7 @@ main() {
     [[ "$selected" == *"eww"*       ]] && install_eww
     [[ "$selected" == *"neomutt"*   ]] && install_neomutt
     [[ "$selected" == *"theme"*     ]] && install_theme
+    [[ "$selected" == *"sddm"*      ]] && install_sddm
     [[ "$selected" == *"security"*  ]] && install_security
     [[ "$selected" == *"fastfetch"* ]] && install_fastfetch
     [[ "$selected" == *"vlc"*       ]] && install_vlc

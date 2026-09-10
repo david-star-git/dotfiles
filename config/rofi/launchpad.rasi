@@ -6,7 +6,7 @@ configuration {
 }
 
 * {
-    font: "Montserrat 9";
+    font: "SF Pro Display 9";
 
     bg0:  #24242480;
     bg1:  #363636;

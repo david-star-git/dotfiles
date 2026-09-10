@@ -10,6 +10,7 @@
 /*****----- Configuration -----*****/
 configuration {
     show-icons:                 false;
+    hover-select:                true;
 }
 
 /*****----- Global Properties -----*****/
@@ -24,9 +25,12 @@ configuration {
     element-padding:             55px 60px;
     element-border-radius:       100%;
 
-    prompt-font:                 "JetBrains Mono Nerd Font Bold Italic 64";
-    textbox-font:                "JetBrains Mono Nerd Font 16";
+    /* Prompt/message text: SF Pro Display (readable text). Icon glyphs
+       stay on a Nerd Font — SF Pro doesn't have the icon codepoints. */
+    prompt-font:                 "SF Pro Display Bold Italic 64";
+    textbox-font:                "SF Pro Display 16";
     element-text-font:           "JetBrains Mono Nerd Font 64";
+    element-text-font-selected:  "JetBrains Mono Nerd Font 76";
 
     background-window:           black/5%;
     background-normal:           white/5%;
@@ -123,9 +127,12 @@ element-text {
     text-color:                  inherit;
     cursor:                      inherit;
     vertical-align:              0.5;
-    horizontal-align:            0.5;
+    horizontal-align:            0.48;
 }
 element selected.normal {
     background-color:            var(background-selected);
     text-color:                  var(foreground-selected);
+}
+element-text selected.normal {
+    font:                        var(element-text-font-selected);
 }
