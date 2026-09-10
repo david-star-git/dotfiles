@@ -8,7 +8,6 @@ dir="$HOME/.config/rofi/powermenu/type-4"
 theme='style-5'
 
 # CMDs
-uptime="`uptime -p | sed -e 's/up //g'`"
 
 # Options
 shutdown=''  # power-off
@@ -17,7 +16,7 @@ lock=''  # lock
 suspend=''  # moon (sleep)
 logout=''  # sign-out
 
-msg=$(printf 'See you soon.\nUptime: %s' "$uptime")
+msg=$(printf 'See you soon.')
 
 # Rofi CMD
 rofi_cmd() {

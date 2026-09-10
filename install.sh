@@ -418,7 +418,13 @@ install_theme() {
 #   sudo systemctl enable sddm
 install_sddm() {
     info "Installing SDDM + Qt6 QML greeter deps..."
-    pacman_install sddm qt6-svg qt6-declarative qt6-quickcontrols2 qt6-multimedia
+    # libplasma / breeze / plasma5support: the theme's QML imports
+    # org.kde.plasma.components, org.kde.breeze.components, and
+    # org.kde.plasma.plasma5support — real KDE Frameworks QML modules
+    # this theme depends on even without Plasma itself installed. Without
+    # these, sddm reports the theme as unable to load.
+    pacman_install sddm qt6-svg qt6-declarative qt6-quickcontrols2 qt6-multimedia \
+        libplasma breeze plasma5support
 
     info "Installing WhiteSur-dark SDDM theme..."
     sudo rm -rf /usr/share/sddm/themes/WhiteSur-dark
