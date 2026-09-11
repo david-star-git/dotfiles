@@ -5,6 +5,11 @@
 ;; System info (CLI)
 
 (defpoll wifi_name :interval "1s" "nmcli -t -f name connection show --active | head -1")
+(defpoll wifi_enabled :interval "3s" "scripts/wifi-enabled.sh")
+(defpoll bt_enabled :interval "3s" "scripts/bluetooth-enabled.sh")
+(defpoll bt_status :interval "3s" "scripts/bluetooth-status.sh")
+(defpoll hotspot_enabled :interval "3s" "scripts/hotspot-enabled.sh")
+(defpoll hotspot_status :interval "3s" "scripts/hotspot-status.sh")
 (defpoll wifi_strength :interval "1s" "nmcli -f IN-USE,SIGNAL device wifi | awk '/^\*/{if (NR!=1) {print $2}}'")
 (defpoll hour :interval "1s" "date '+%a %b %_d %_H:%M'")
 

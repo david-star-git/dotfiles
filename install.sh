@@ -418,13 +418,20 @@ install_theme() {
 #   sudo systemctl enable sddm
 install_sddm() {
     info "Installing SDDM + Qt6 QML greeter deps..."
-    # libplasma / breeze / plasma5support: the theme's QML imports
-    # org.kde.plasma.components, org.kde.breeze.components, and
-    # org.kde.plasma.plasma5support — real KDE Frameworks QML modules
-    # this theme depends on even without Plasma itself installed. Without
-    # these, sddm reports the theme as unable to load.
+    # org.kde.breeze.components actually ships inside plasma-workspace
+    # (SDDM's own bundled Breeze QML), NOT the separate "breeze" widget-
+    # style package — that was the wrong guess last round. plasma-
+    # workspace is a genuinely large dependency (most of the Plasma
+    # runtime) — that's the real cost of a Plasma-authored greeter theme,
+    # not something a smaller package substitutes for.
+    #
+    # Heads up: even KDE's own stock Breeze SDDM theme has open reports of
+    # "Library import requires a version" on Plasma 6 systems from QML
+    # version-import mismatches — this ecosystem is somewhat fragile in
+    # general right now, not a WhiteSur-specific issue. If this still
+    # doesn't load after this fix, that's the likely next culprit.
     pacman_install sddm qt6-svg qt6-declarative qt6-quickcontrols2 qt6-multimedia \
-        libplasma breeze plasma5support
+        libplasma plasma-workspace plasma5support
 
     info "Installing WhiteSur-dark SDDM theme..."
     sudo rm -rf /usr/share/sddm/themes/WhiteSur-dark

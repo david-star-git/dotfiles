@@ -83,17 +83,15 @@ $color-accent: rgb(10, 132, 255);
         background: $color-bg-overlay;
         border-radius: $rounding;
         box-shadow: 0px 4px 8px 0px rgba(#000, .2);
-        button {
-            color: $color-fg;
-            font-weight: 500;
-            background: transparent;
-            border: 0;
-            padding: 0;
-            .icon {
-                border-radius: 100%;
-                padding: 6px;
-                background: $color-accent;
-            }
+        color: $color-fg;
+        font-weight: 500;
+        .icon {
+            border-radius: 100%;
+            padding: 6px;
+            background: $color-bg-slider;
+        }
+        .icon-on {
+            background: $color-accent;
         }
     }
     .slider {
@@ -112,6 +110,8 @@ $color-accent: rgb(10, 132, 255);
             padding: 0;
             trough {
                 background: none;
+                border: none;
+                padding: 0;
                 min-height: $slider-height;
                 border-radius: $slider-height;
                 margin: 0 $slider-height / 2 - 1px;
@@ -119,6 +119,8 @@ $color-accent: rgb(10, 132, 255);
             highlight {                                
                 min-width: $slider-height;
                 min-height: $slider-height;
+                border: none;
+                padding: 0;
                 border-top-left-radius: $slider-height / 2;
                 border-bottom-left-radius: $slider-height / 2;
                 background: $color-bg-opaque;
@@ -127,6 +129,8 @@ $color-accent: rgb(10, 132, 255);
             slider {
                 min-width: $slider-height;
                 min-height: $slider-height;
+                border: none;
+                padding: 0;
                 box-shadow: 0px 0px 1px 1px rgba(#000, .1), 0px 0px 4px 0px rgba(#000, .2);
             }
         }
