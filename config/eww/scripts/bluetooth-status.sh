@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-# Prints "Off", "No Devices", or "<Name>" / "N devices" for the top tile subtext.
-set -euo pipefail
-
-if ! bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
-    echo "Off"
-    exit 0
-fi
+# Prints "No Devices", "<Name>", or "N devices" for the Bluetooth tile's
+# sublabel. On/off itself is governed by rfkill (bluetooth-enabled.sh) —
+# this script only reports on connected devices when the radio is on,
+# so the two signals don't fight each other.
+set -uo pipefail
 
 mapfile -t devices < <(bluetoothctl devices Connected 2>/dev/null | cut -d' ' -f3-)
 

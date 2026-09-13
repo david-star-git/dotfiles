@@ -89,10 +89,46 @@ $color-accent: rgb(10, 132, 255);
             border-radius: 100%;
             padding: 6px;
             background: $color-bg-slider;
+            transition: background 120ms ease, box-shadow 120ms ease;
         }
         .icon-on {
             background: $color-accent;
         }
+        // Tor has its own 3-state colouring instead of the generic on/off
+        // accent, matching the purple/green systemPurple border swap that
+        // tor-status.sh already does on a verified connection.
+        .icon-tor-connected {
+            background: rgb(191, 90, 242);
+        }
+        .icon-tor-connecting {
+            background: rgba(255, 159, 10, 0.5);
+        }
+        // The circle is the only clickable part of a row: hover/click
+        // feedback below. (Cursor is set via the eventbox's :cursor
+        // attribute in the yuck — GTK CSS has no `cursor` property, and
+        // eww treats an unrecognized property as a fatal parse error for
+        // the whole stylesheet, which is what wiped the theme before.)
+    }
+    .icon-hitbox:hover .icon {
+        background: rgba(#fff, 0.28);
+    }
+    .icon-hitbox:hover .icon-on {
+        background: lighten($color-accent, 8%);
+    }
+    .icon-hitbox:hover .icon-tor-connected {
+        background: lighten(rgb(191, 90, 242), 8%);
+    }
+    .icon-hitbox:active .icon {
+        background: rgba(#fff, 0.4);
+        box-shadow: inset 0px 0px 0px 2px rgba(#fff, 0.25);
+    }
+    .icon-hitbox:active .icon-on {
+        background: darken($color-accent, 8%);
+        box-shadow: inset 0px 0px 0px 2px rgba(#000, 0.2);
+    }
+    .icon-hitbox:active .icon-tor-connected {
+        background: darken(rgb(191, 90, 242), 8%);
+        box-shadow: inset 0px 0px 0px 2px rgba(#000, 0.2);
     }
     .slider {
         padding-top: 12px;
@@ -124,7 +160,15 @@ $color-accent: rgb(10, 132, 255);
                 border-top-left-radius: $slider-height / 2;
                 border-bottom-left-radius: $slider-height / 2;
                 background: $color-bg-opaque;
-                margin: 0px -$slider-height / 2 + 2px;
+                // Only the trailing (right) edge gets pulled negative, to
+                // tuck the highlight's square-cut edge in behind the round
+                // slider knob. The leading (left) edge stays at 0 — it used
+                // to share that same negative margin, which left only ~1px
+                // of clearance from the panel's rounded corner and showed
+                // up as a clipped nick at low values.
+                // -11px == -$slider-height / 2 + 2px, written as a literal
+                // to avoid parenthesized arithmetic in a shorthand list.
+                margin: 0px -11px 0px 0px;
             }
             slider {
                 min-width: $slider-height;

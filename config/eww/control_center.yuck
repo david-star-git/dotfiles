@@ -10,7 +10,7 @@
         (box :class "container" :space-evenly false :spacing 16 :orientation "vertical"
             (box :spacing 16
                 (quick_settings)
-                (box :class "control")
+                (quick_settings_secondary)
             )
             (box
                 :class "slider control"
@@ -38,10 +38,10 @@
 ;; A single Control-Center-style row: a clickable icon circle (toggles the
 ;; feature) plus an inert label/sublabel next to it. Only the circle is
 ;; clickable for now — the text becomes a way into a detail panel later.
-(defwidget tile-row [icon label sublabel enabled onclick]
+(defwidget tile-row [icon label sublabel enabled onclick icon-class]
     (box :space-evenly false :spacing 12
-        (eventbox :onclick onclick
-            (box :class "icon ${enabled ? "icon-on" : ""}" :valign "center"
+        (eventbox :onclick onclick :class "icon-hitbox" :cursor "pointer"
+            (box :class "icon ${enabled ? "icon-on" : ""} ${icon-class}" :valign "center"
                 (image :image-width 21 :path "/usr/share/icons/WhiteSur-dark/status/symbolic/${icon}-symbolic.svg")
             )
         )
@@ -54,20 +54,49 @@
 
 (defwidget quick_settings[]
     (box :class "control" :orientation "vertical" :spacing 16
-        (tile-row :icon {wifi_enabled == "1" ? "network-wireless-signal-excellent" : "network-wireless-disabled"}
+        (tile-row :icon {wifi_state == "1" ? "network-wireless-signal-excellent" : "network-wireless-disabled"}
                   :label "Wi-Fi"
-                  :enabled {wifi_enabled == "1"}
-                  :sublabel {wifi_enabled != "1" ? "Off" : strlength(wifi_name) > 13 ? captures(wifi_name, '.{0,12}')[0][0] + "..." : wifi_name}
+                  :enabled {wifi_state == "1"}
+                  :icon-class ""
+                  :sublabel {wifi_state != "1" ? "Off" : strlength(wifi_name) > 13 ? captures(wifi_name, '.{0,12}')[0][0] + "..." : wifi_name}
                   :onclick "scripts/wifi-toggle.sh")
-        (tile-row :icon {bt_enabled == "1" ? "bluetooth-active" : "bluetooth-disabled"}
+        (tile-row :icon {bt_state == "1" ? "bluetooth-active" : "bluetooth-disabled"}
                   :label "Bluetooth"
-                  :enabled {bt_enabled == "1"}
+                  :enabled {bt_state == "1"}
+                  :icon-class ""
                   :sublabel bt_status
                   :onclick "scripts/bluetooth-toggle.sh")
         (tile-row :icon "network-wireless-hotspot"
                   :label "Hotspot"
-                  :enabled {hotspot_enabled == "1"}
+                  :enabled {hotspot_state == "1"}
+                  :icon-class ""
                   :sublabel hotspot_status
                   :onclick "scripts/hotspot-toggle.sh")
+    )
+)
+
+;; Second column: Notifications (DND), Tor, Airplane. Same tile-row as the
+;; block above — wired to the vars/scripts that were already sitting in
+;; scripts/ unused (dnd_state, tor_status, airplane_state).
+(defwidget quick_settings_secondary[]
+    (box :class "control" :orientation "vertical" :spacing 16
+        (tile-row :icon {dnd_state == "on" ? "notification-disabled" : "notification-active"}
+                  :label "Notifications"
+                  :enabled {dnd_state == "on"}
+                  :icon-class ""
+                  :sublabel {dnd_state == "on" ? "Do Not Disturb" : "On"}
+                  :onclick "scripts/dnd-toggle.sh")
+        (tile-row :icon {tor_status == "off" ? "network-vpn-disabled" : "network-vpn"}
+                  :label "Tor"
+                  :enabled false
+                  :icon-class {tor_status == "connected" ? "icon-tor-connected" : tor_status == "connecting" ? "icon-tor-connecting" : ""}
+                  :sublabel {tor_status == "connected" ? "Connected" : tor_status == "connecting" ? "Connecting…" : "Off"}
+                  :onclick "scripts/tor-click.sh")
+        (tile-row :icon {airplane_state == "1" ? "airplane-mode" : "airplane-mode-disabled"}
+                  :label "Airplane"
+                  :enabled {airplane_state == "1"}
+                  :icon-class ""
+                  :sublabel {airplane_state == "1" ? "On" : "Off"}
+                  :onclick "scripts/airplane-toggle.sh")
     )
 )

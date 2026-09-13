@@ -16,6 +16,11 @@ state=$(cat "$STATE_FILE" 2>/dev/null || echo "off")
 
 if [[ "$state" != "on" ]]; then
     status="off"
+elif ! systemctl is-active --quiet tor.service 2>/dev/null; then
+    # State file says "on" but the actual tor.service isn't running —
+    # routing can't possibly be real regardless of what a network check
+    # says. Force "off" and don't bother hitting the network.
+    status="off"
 else
     # Real verification: does check.torproject.org see us as Tor?
     # Short timeout — this runs on every poll, must not hang the bar.

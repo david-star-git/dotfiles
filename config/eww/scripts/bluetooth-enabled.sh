@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Prints 1 if the Bluetooth radio is powered on, 0 if off.
+# Prints 1 if the Bluetooth radio is unblocked (on), 0 otherwise.
+# rfkill-based, same reasoning as wifi-enabled.sh.
 set -euo pipefail
-if bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
-    echo 1
-else
-    echo 0
-fi
+soft=$(rfkill -J list bluetooth 2>/dev/null | jq -r '.rfkilldevices[0].soft // "blocked"')
+[[ "$soft" == "unblocked" ]] && echo 1 || echo 0
