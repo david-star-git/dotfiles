@@ -12,6 +12,8 @@ is_all_blocked() {
     [[ "$total" -gt 0 && "$total" -eq "$blocked" ]]
 }
 
+token=$(new_click_token airplane)
+
 if is_all_blocked; then
     eww_set airplane_state 0
     log airplane "optimistic=0 (was on, unblocking all)"
@@ -25,9 +27,11 @@ else
 fi
 
 sleep 0.3
-if is_all_blocked; then
-    eww_set airplane_state 1
-else
-    eww_set airplane_state 0
+if is_latest_click airplane "$token"; then
+    if is_all_blocked; then
+        eww_set airplane_state 1
+    else
+        eww_set airplane_state 0
+    fi
 fi
 log airplane "confirmed (rfkill exit $action_rc)"

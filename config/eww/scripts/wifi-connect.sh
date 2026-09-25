@@ -1,30 +1,45 @@
 #!/usr/bin/env bash
-# wifi-connect.sh <ssid> [password]
-# Tries to connect (nmcli reuses a saved profile's password automatically
-# if one exists for this SSID — password is only needed for a new network).
-# Writes which SSID (if any) just failed to a cache file the UI polls, so
-# the one tile that failed can reveal its password field — a plain
-# equality check in the UI, no string parsing needed there.
+# wifi-connect.sh SSID — connects to a network. If it's secured, the
+# password is read from the wifi_pw_value eww var (set live as the user
+# types in the password field) rather than taken as a second argument,
+# so special characters in the password never have to survive being
+# interpolated into a shell command from the yuck template — only the
+# SSID does.
 set -uo pipefail
+source "$(dirname "$0")/lib.sh"
 
 ssid="${1:-}"
-password="${2:-}"
-FAILED_FILE="$HOME/.cache/wifi-connect-failed-ssid"
-
 if [[ -z "$ssid" ]]; then
+    log wifi-connect "no SSID given"
     exit 1
 fi
 
-: > "$FAILED_FILE"  # clear while attempting
+password="$(eww get wifi_pw_value 2>/dev/null || true)"
 
+eww_set wifi_connect_status "connecting"
+log wifi-connect "connecting to $ssid"
+
+out=$(mktemp)
 if [[ -n "$password" ]]; then
-    nmcli dev wifi connect "$ssid" password "$password" >/dev/null 2>&1
+    nmcli device wifi connect "$ssid" password "$password" >"$out" 2>&1
+    rc=$?
 else
-    nmcli dev wifi connect "$ssid" >/dev/null 2>&1
-fi
-rc=$?
-
-if [[ $rc -ne 0 ]]; then
-    echo "$ssid" > "$FAILED_FILE"
+    nmcli device wifi connect "$ssid" >"$out" 2>&1
+    rc=$?
 fi
 
+if [[ $rc -eq 0 ]]; then
+    eww_set wifi_connect_status "connected"
+    eww_set wifi_connecting_ssid ""
+    eww_set wifi_pw_value ""
+    log wifi-connect "connected to $ssid"
+else
+    eww_set wifi_connect_status "error"
+    log wifi-connect "failed to connect to $ssid: $(cat "$out")"
+fi
+rm -f "$out"
+
+# Refresh the list so the newly-connected network shows as active
+# without waiting for the next 10s poll.
+result=$("$(dirname "$0")/wifi-scan.sh")
+eww_set wifi_networks "$result"

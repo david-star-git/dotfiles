@@ -28,3 +28,26 @@ eww_get() {
 eww_set() {
     eww update "$1"="$2" >/dev/null 2>&1
 }
+
+# --- Spam-click safety -----------------------------------------------
+# Every toggle does: flip optimistically, run the real (possibly slow)
+# command, then write a "confirm" value once it's done. If you click
+# again before that confirm lands, the OLD invocation's confirm can
+# arrive after the NEW click's optimistic flip and stomp it — the tile
+# looks like it ignored the second tap. These two helpers make "latest
+# click wins": call new_click_token once right after the optimistic
+# flip, then guard the delayed confirm write with is_latest_click.
+CLICK_DIR="$HOME/.cache/eww-click-tokens"
+mkdir -p "$CLICK_DIR" 2>/dev/null
+
+new_click_token() {
+    local key="$1" token
+    token="$(date +%s%N)-$$"
+    echo "$token" > "$CLICK_DIR/$key"
+    echo "$token"
+}
+
+is_latest_click() {
+    local key="$1" token="$2"
+    [[ "$(cat "$CLICK_DIR/$key" 2>/dev/null)" == "$token" ]]
+}

@@ -4,6 +4,7 @@ set -uo pipefail
 source "$(dirname "$0")/lib.sh"
 
 current=$(rfkill -J list bluetooth 2>/dev/null | jq -r '.rfkilldevices[0].soft // "blocked"')
+token=$(new_click_token bluetooth)
 
 if [[ "$current" == "unblocked" ]]; then
     eww_set bt_state 0
@@ -19,9 +20,11 @@ fi
 
 sleep 0.3
 real=$(rfkill -J list bluetooth 2>/dev/null | jq -r '.rfkilldevices[0].soft // "blocked"')
-if [[ "$real" == "unblocked" ]]; then
-    eww_set bt_state 1
-else
-    eww_set bt_state 0
+if is_latest_click bluetooth "$token"; then
+    if [[ "$real" == "unblocked" ]]; then
+        eww_set bt_state 1
+    else
+        eww_set bt_state 0
+    fi
 fi
 log bluetooth "confirmed=$real (rfkill exit $action_rc)"

@@ -131,7 +131,13 @@ $color-accent: rgb(10, 132, 255);
         box-shadow: inset 0px 0px 0px 2px rgba(#000, 0.2);
     }
     .slider {
-        padding-top: 12px;
+        // Tighter than .control's default 16px — sized for the label text
+        // above, not for how close the pill itself should sit to the
+        // edge. The trough/highlight below still reserve their own 12px
+        // so the round handle can't overflow at min/max value, so total
+        // edge-to-track gap is ~20px (8 here + 12 reserved), not 0 — a
+        // literal 0 would let the handle clip the corner at full value.
+        padding: 12px 8px 8px 8px;
         .edge {
             min-width: $slider-height;
             min-height: $slider-height;
@@ -160,15 +166,19 @@ $color-accent: rgb(10, 132, 255);
                 border-top-left-radius: $slider-height / 2;
                 border-bottom-left-radius: $slider-height / 2;
                 background: $color-bg-opaque;
-                // Only the trailing (right) edge gets pulled negative, to
-                // tuck the highlight's square-cut edge in behind the round
-                // slider knob. The leading (left) edge stays at 0 — it used
-                // to share that same negative margin, which left only ~1px
-                // of clearance from the panel's rounded corner and showed
-                // up as a clipped nick at low values.
-                // -11px == -$slider-height / 2 + 2px, written as a literal
-                // to avoid parenthesized arithmetic in a shorthand list.
-                margin: 0px -11px 0px 0px;
+                // Left margin must match trough's own left inset (12px)
+                // exactly, or the highlight's rounded cap sits at a
+                // different starting point than the trough's background —
+                // that mismatch (left was 0 here before) is what showed as
+                // the highlight and the track's background "not starting
+                // in the same place." Only the right edge stays pulled
+                // negative, to tuck the highlight's square-cut edge in
+                // behind the round slider knob.
+                // 12px == $slider-height / 2 - 1px (trough's own inset);
+                // -11px == -$slider-height / 2 + 2px — both written as
+                // literals to avoid parenthesized arithmetic in a
+                // shorthand list.
+                margin: 0px -11px 0px 12px;
             }
             slider {
                 min-width: $slider-height;
@@ -188,4 +198,73 @@ $color-accent: rgb(10, 132, 255);
         margin: 32px;
         padding: 16px;
     }
+
+    // --- Detail-view navigation (back/refresh/eye/submit) --------------
+    // Fixed 36x36 so back/refresh/eye/submit are always identically sized
+    // and match the password input's height — separate from .icon (used
+    // by the main tile rows) so changing this never affects those.
+    $nav-size: 36px;
+    .nav-icon {
+        min-width: $nav-size;
+        min-height: $nav-size;
+        border-radius: 100%;
+        background: $color-bg-slider;
+        transition: background 120ms ease, box-shadow 120ms ease;
+    }
+    // Header nav buttons (back/refresh) sit on the same card as the title,
+    // so no distinct circle at rest — just the glyph. Eye/submit in the
+    // password row keep the default .nav-icon circle since they're the
+    // only visual cue that they're buttons in an otherwise plain input row.
+    .nav-icon-flat {
+        background: transparent;
+    }
+    .icon-hitbox:hover .nav-icon {
+        background: rgba(255, 255, 255, 0.28);
+    }
+    .icon-hitbox:active .nav-icon {
+        background: rgba(255, 255, 255, 0.4);
+        box-shadow: inset 0px 0px 0px 2px rgba(255, 255, 255, 0.25);
+    }
+    .nav-glyph {
+        font-size: 16px;
+        font-weight: 700;
+    }
+    .icon-scanning {
+        background: rgba(255, 255, 255, 0.4);
+    }
+    .view-title {
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    // --- Wi-Fi network list ---------------------------------------------
+    // Generic hoverable full-width row, reused by any future detail-view
+    // list (Bluetooth devices, hotspot clients, notifications).
+    .list-row {
+        border-radius: 8px;
+        padding: 6px 8px;
+        transition: background 120ms ease;
+    }
+    .list-row:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .list-row:active {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    .password-panel {
+        padding: 4px 8px 8px 8px;
+    }
+    .password-input {
+        background: $color-bg-slider;
+        border: none;
+        border-radius: 8px;
+        padding: 0px 10px;
+        min-height: $nav-size;
+        color: $color-fg;
+    }
+    .error-text {
+        color: rgb(255, 69, 58);
+        font-size: 12px;
+    }
 }
+

@@ -31,6 +31,37 @@
 
 (defvar control_center_open false)
 
+;; Control-center page navigation. "main" is the default view; each
+;; detail view (currently just "wifi") is its own named state — see the
+;; sliding pages structure in control_center.yuck.
+(defvar cc_view "main")
+
+;; Wi-Fi detail view state
+(defvar wifi_connecting_ssid "")
+(defvar wifi_pw_value "")
+(defvar wifi_pw_visible false)
+(defvar wifi_connect_status "")
+(defvar wifi_scanning false)
+(defpoll wifi_networks :interval "10s" "scripts/wifi-scan.sh")
+
+;; Bluetooth detail view state. bluetooth-scan.sh pushes bluetooth_nearby
+;; directly (see the script) and returns the paired list as its own
+;; stdout, captured here — one scan burst drives both lists.
+(defvar bluetooth_nearby "[]")
+(defvar bluetooth_scanning false)
+(defpoll bluetooth_paired :interval "15s" "scripts/bluetooth-scan.sh")
+
+;; Hotspot detail view state. ssid/password values are loaded once when
+;; the view opens (scripts/hotspot-load-config.sh, chained into the
+;; tile's onclick — see tile-row's detail-onclick) rather than polled,
+;; so a background refresh never overwrites what you're mid-typing.
+(defvar hotspot_ssid_value "Hotspot")
+(defvar hotspot_password_value "")
+(defvar hotspot_pw_visible false)
+(defvar hotspot_configure_status "")
+(defvar hotspot_scanning false)
+(defpoll hotspot_clients :interval "5s" "scripts/hotspot-clients.sh")
+
 ;; Imports
 
 (include "./control_center.yuck")
@@ -75,17 +106,18 @@
         :class "section"
         (button
             :class "selectable"
-            :onclick "eww update control_center_open='${!control_center_open}'"
+            :onclick "eww update control_center_open='${!control_center_open}' cc_view='main' wifi_connecting_ssid='' wifi_pw_value='' wifi_pw_visible=false wifi_connect_status=''"
             (box :spacing 21 :space-evenly false
                 (image
                     :tooltip "${volume}%"
                     :path "/usr/share/icons/WhiteSur/status/symbolic/audio-volume-${volume > 100 ? "overamplified" : volume > 66 ? "high" : volume > 33 ? "medium" : volume > 0 ? "low" : "muted"}-symbolic.svg"
                 )
                 (image
-                    :tooltip "${wifi_strength}%"
-                    :path "/usr/share/icons/WhiteSur/status/symbolic/network-wireless-signal-${wifi_strength == "" ? "none" : wifi_strength > 66 ? "excellent" : wifi_strength > 33 ? "ok" : "weak"}-symbolic.svg")
+                    :tooltip {wifi_state == "1" ? (wifi_strength + "%") : "Off"}
+                    :path "/usr/share/icons/WhiteSur/status/symbolic/${wifi_state != "1" ? "network-wireless-disabled" : "network-wireless-signal-" + (wifi_strength == "" ? "none" : wifi_strength > 66 ? "excellent" : wifi_strength > 33 ? "ok" : "weak")}-symbolic.svg")
                 (image
-                    :path "/usr/share/icons/WhiteSur/status/symbolic/bluetooth-active-symbolic.svg"
+                    :tooltip {bt_state == "1" ? bt_status : "Off"}
+                    :path "/usr/share/icons/WhiteSur/status/symbolic/bluetooth-${bt_state == "1" ? "active" : "disabled"}-symbolic.svg"
                 )
                 (box :space-evenly false :spacing 8
                     (image

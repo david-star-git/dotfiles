@@ -24,6 +24,7 @@ active_ap_connection() {
 }
 
 current=$(active_ap_connection || true)
+token=$(new_click_token hotspot)
 
 if [[ -n "$current" ]]; then
     eww_set hotspot_state 0
@@ -33,14 +34,32 @@ if [[ -n "$current" ]]; then
 else
     eww_set hotspot_state 1
     log hotspot "optimistic=1 (was off, starting)"
-    nmcli device wifi hotspot >/dev/null 2>&1
+    # Use the SSID/password saved from the Hotspot config screen, if any
+    # (see hotspot-configure.sh) — otherwise fall back to nmcli's own
+    # auto-generated defaults, same as before this existed.
+    conf="$HOME/.cache/hotspot-config"
+    ssid=""
+    password=""
+    if [[ -f "$conf" ]]; then
+        ssid="$(sed -n '1p' "$conf")"
+        password="$(sed -n '2p' "$conf")"
+    fi
+    if [[ -n "$ssid" && -n "$password" ]]; then
+        nmcli device wifi hotspot ssid "$ssid" password "$password" >/dev/null 2>&1
+    elif [[ -n "$ssid" ]]; then
+        nmcli device wifi hotspot ssid "$ssid" >/dev/null 2>&1
+    else
+        nmcli device wifi hotspot >/dev/null 2>&1
+    fi
     action_rc=$?
 fi
 
 sleep 0.5
-if active_ap_connection >/dev/null; then
-    eww_set hotspot_state 1
-else
-    eww_set hotspot_state 0
+if is_latest_click hotspot "$token"; then
+    if active_ap_connection >/dev/null; then
+        eww_set hotspot_state 1
+    else
+        eww_set hotspot_state 0
+    fi
 fi
 log hotspot "confirmed (nmcli exit $action_rc)"

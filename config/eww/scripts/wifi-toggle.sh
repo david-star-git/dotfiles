@@ -6,6 +6,8 @@ source "$(dirname "$0")/lib.sh"
 
 current=$(rfkill -J list wlan 2>/dev/null | jq -r '.rfkilldevices[0].soft // "blocked"')
 
+token=$(new_click_token wifi)
+
 if [[ "$current" == "unblocked" ]]; then
     eww_set wifi_state 0
     log wifi "optimistic=0 (was on, blocking)"
@@ -20,9 +22,11 @@ fi
 
 sleep 0.3
 real=$(rfkill -J list wlan 2>/dev/null | jq -r '.rfkilldevices[0].soft // "blocked"')
-if [[ "$real" == "unblocked" ]]; then
-    eww_set wifi_state 1
-else
-    eww_set wifi_state 0
+if is_latest_click wifi "$token"; then
+    if [[ "$real" == "unblocked" ]]; then
+        eww_set wifi_state 1
+    else
+        eww_set wifi_state 0
+    fi
 fi
 log wifi "confirmed=$real (rfkill exit $action_rc)"

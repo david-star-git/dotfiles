@@ -5,30 +5,30 @@
     :stacking "fg"
     :wm-ignore false
     :class "dark"
+    ;; :focusable "ondemand"
     (revealer :reveal control_center_open :transition "none"
-        (eventbox :onhoverlost "eww update control_center_open='false'"
-        (box :class "container" :space-evenly false :spacing 16 :orientation "vertical"
-            (box :spacing 16
-                (quick_settings)
-                (quick_settings_secondary)
-            )
-            (box
-                :class "slider control"
-                :orientation "vertical"
-                :space-evenly false
-                :spacing 8
-                (label :xalign 0 :text "Display")
-                (scale :class "scale" :value brightness :min 0 :max max_brightness
-                       :onchange "brightnessctl s {} && echo {} > ~/.cache/saved-brightness")
-            )
-            (box
-                :class "slider control"
-                :orientation "vertical"
-                :space-evenly false
-                :spacing 8
-                (label :xalign 0 :text "Sound")
-                (scale :class "scale" :value volume :min 0 :max 100
-                       :onchange "pamixer --set-volume {} && eww update volume='{}' && echo {} > ~/.cache/saved-volume")
+        (eventbox :onhoverlost "eww update control_center_open='false' cc_view='main' wifi_connecting_ssid='' wifi_pw_value='' wifi_pw_visible=false wifi_connect_status=''"
+        (box :class "container" :space-evenly false
+            ;; Sliding pages: "main" and each detail view sit side by side in
+            ;; a horizontal box, each held to the same natural width (364px
+            ;; = the 460px window minus the container's own 32px margin and
+            ;; 16px padding on both sides) so the pair's combined width stays
+            ;; constant through the animation — only the split between them
+            ;; moves, which is what makes it read as one panel sliding
+            ;; rather than two independently resizing boxes.
+            (box :class "pages" :space-evenly false :orientation "horizontal"
+                (revealer :reveal {cc_view == "main"} :transition "slideright" :duration "220ms"
+                    (main_view)
+                )
+                (revealer :reveal {cc_view == "wifi"} :transition "slideleft" :duration "220ms"
+                    (wifi_view)
+                )
+                (revealer :reveal {cc_view == "bluetooth"} :transition "slideleft" :duration "220ms"
+                    (bluetooth_view)
+                )
+                (revealer :reveal {cc_view == "hotspot"} :transition "slideleft" :duration "220ms"
+                    (hotspot_view)
+                )
             )
         )
         )
@@ -36,18 +36,22 @@
 )
 
 ;; A single Control-Center-style row: a clickable icon circle (toggles the
-;; feature) plus an inert label/sublabel next to it. Only the circle is
-;; clickable for now — the text becomes a way into a detail panel later.
-(defwidget tile-row [icon label sublabel enabled onclick icon-class]
+;; feature) plus a label/sublabel next to it. The circle toggles on click;
+;; the text navigates to a detail view when `detail` is non-empty (pass ""
+;; for rows — Tor, Airplane — that don't have one).
+(defwidget tile-row [icon label sublabel enabled onclick icon-class detail detail-onclick]
     (box :space-evenly false :spacing 12
         (eventbox :onclick onclick :class "icon-hitbox" :cursor "pointer"
             (box :class "icon ${enabled ? "icon-on" : ""} ${icon-class}" :valign "center"
                 (image :image-width 21 :path "/usr/share/icons/WhiteSur-dark/status/symbolic/${icon}-symbolic.svg")
             )
         )
-        (box :orientation "vertical"
-            (label :xalign 0 :text label)
-            (label :xalign 0 :class "muted" :text sublabel)
+        (eventbox :onclick {detail-onclick != "" ? detail-onclick : detail != "" ? "eww update cc_view='${detail}'" : ""}
+                  :cursor {detail != "" ? "pointer" : "default"}
+            (box :orientation "vertical"
+                (label :xalign 0 :text label)
+                (label :xalign 0 :class "muted" :text sublabel)
+            )
         )
     )
 )
@@ -59,19 +63,25 @@
                   :enabled {wifi_state == "1"}
                   :icon-class ""
                   :sublabel {wifi_state != "1" ? "Off" : strlength(wifi_name) > 13 ? captures(wifi_name, '.{0,12}')[0][0] + "..." : wifi_name}
-                  :onclick "scripts/wifi-toggle.sh")
+                  :onclick "scripts/wifi-toggle.sh"
+                  :detail "wifi"
+                  :detail-onclick "")
         (tile-row :icon {bt_state == "1" ? "bluetooth-active" : "bluetooth-disabled"}
                   :label "Bluetooth"
                   :enabled {bt_state == "1"}
                   :icon-class ""
                   :sublabel bt_status
-                  :onclick "scripts/bluetooth-toggle.sh")
+                  :onclick "scripts/bluetooth-toggle.sh"
+                  :detail "bluetooth"
+                  :detail-onclick "")
         (tile-row :icon "network-wireless-hotspot"
                   :label "Hotspot"
                   :enabled {hotspot_state == "1"}
                   :icon-class ""
                   :sublabel hotspot_status
-                  :onclick "scripts/hotspot-toggle.sh")
+                  :onclick "scripts/hotspot-toggle.sh"
+                  :detail "hotspot"
+                  :detail-onclick "scripts/hotspot-load-config.sh; eww update cc_view='hotspot'")
     )
 )
 
@@ -80,23 +90,231 @@
 ;; scripts/ unused (dnd_state, tor_status, airplane_state).
 (defwidget quick_settings_secondary[]
     (box :class "control" :orientation "vertical" :spacing 16
-        (tile-row :icon {dnd_state == "on" ? "notification-disabled" : "notification-active"}
+        (tile-row :icon {dnd_state == "on" ? "notification-disabled" : "notification"}
                   :label "Notifications"
-                  :enabled {dnd_state == "on"}
+                  :enabled {dnd_state != "on"}
                   :icon-class ""
                   :sublabel {dnd_state == "on" ? "Do Not Disturb" : "On"}
-                  :onclick "scripts/dnd-toggle.sh")
+                  :onclick "scripts/dnd-toggle.sh"
+                  :detail ""
+                  :detail-onclick "")
         (tile-row :icon {tor_status == "off" ? "network-vpn-disabled" : "network-vpn"}
                   :label "Tor"
                   :enabled false
                   :icon-class {tor_status == "connected" ? "icon-tor-connected" : tor_status == "connecting" ? "icon-tor-connecting" : ""}
                   :sublabel {tor_status == "connected" ? "Connected" : tor_status == "connecting" ? "Connecting…" : "Off"}
-                  :onclick "scripts/tor-click.sh")
+                  :onclick "scripts/tor-click.sh"
+                  :detail ""
+                  :detail-onclick "")
         (tile-row :icon {airplane_state == "1" ? "airplane-mode" : "airplane-mode-disabled"}
                   :label "Airplane"
                   :enabled {airplane_state == "1"}
                   :icon-class ""
                   :sublabel {airplane_state == "1" ? "On" : "Off"}
-                  :onclick "scripts/airplane-toggle.sh")
+                  :onclick "scripts/airplane-toggle.sh"
+                  :detail ""
+                  :detail-onclick "")
+    )
+)
+
+;; --- Page: main (the default control-center view) -----------------------
+
+(defwidget main_view []
+    (box :orientation "vertical" :space-evenly false :spacing 16 :width 364
+        (box :spacing 16
+            (quick_settings)
+            (quick_settings_secondary)
+        )
+        (box
+            :class "slider control"
+            :orientation "vertical"
+            :space-evenly false
+            :spacing 8
+            (label :xalign 0 :text "Display")
+            (scale :class "scale" :value brightness :min 0 :max max_brightness
+                   :onchange "brightnessctl s {} && echo {} > ~/.cache/saved-brightness")
+        )
+        (box
+            :class "slider control"
+            :orientation "vertical"
+            :space-evenly false
+            :spacing 8
+            (label :xalign 0 :text "Sound")
+            (scale :class "scale" :value volume :min 0 :max 100
+                   :onchange "pamixer --set-volume {} && eww update volume='{}' && echo {} > ~/.cache/saved-volume")
+        )
+    )
+)
+
+;; --- Shared: a nav-bar icon button (back / refresh / show-password / ---
+;; --- submit). Uses a text glyph rather than an image-icon on purpose:
+;; guessing SVG filenames against an icon set we can't see has already
+;; burned a render once (blank icon, no error) — a glyph always renders
+;; *something*, even if it's not pixel-perfect. Happy to swap these for
+;; real SVGs once you confirm exact filenames from your WhiteSur set.
+(defwidget nav-icon-btn [glyph onclick state-class]
+    (eventbox :onclick onclick :class "icon-hitbox" :cursor "pointer"
+        (box :class "nav-icon ${state-class}" :valign "center" :halign "center"
+            (label :class "nav-glyph" :text glyph)
+        )
+    )
+)
+
+;; --- Page: Wi-Fi ----------------------------------------------------------
+
+(defwidget wifi_view []
+    (box :orientation "vertical" :space-evenly false :spacing 16 :width 364
+        (box :class "control" :orientation "horizontal" :space-evenly false :spacing 12
+            (nav-icon-btn :glyph "‹"
+                          :onclick "eww update cc_view='main' wifi_connecting_ssid='' wifi_pw_value='' wifi_pw_visible=false wifi_connect_status=''"
+                          :state-class "nav-icon-flat")
+            (label :hexpand true :halign "center" :class "view-title" :text "Wi-Fi")
+            (nav-icon-btn :glyph "⟳" :onclick "scripts/wifi-rescan.sh"
+                          :state-class {wifi_scanning ? "nav-icon-flat icon-scanning" : "nav-icon-flat"})
+        )
+        (box :class "control" :orientation "vertical" :space-evenly false
+            (scroll :vscroll true :hscroll false :height 280
+                (box :orientation "vertical" :space-evenly false :spacing 10
+                    (for network in wifi_networks
+                        (wifi-network-row :network network)
+                    )
+                )
+            )
+        )
+    )
+)
+
+(defwidget wifi-network-row [network]
+    (box :orientation "vertical" :space-evenly false
+        (eventbox :class "list-row"
+                  :cursor {network.active ? "default" : "pointer"}
+                  :onclick {network.active
+                              ? ""
+                              : network.secured
+                                  ? (wifi_connecting_ssid == network.ssid
+                                      ? "eww update wifi_connecting_ssid='' wifi_pw_value='' wifi_pw_visible=false wifi_connect_status=''"
+                                      : "eww update wifi_connecting_ssid='${network.ssid}' wifi_pw_value='' wifi_pw_visible=false wifi_connect_status=''")
+                                  : "scripts/wifi-connect.sh '${network.ssid}'"}
+            (box :space-evenly false :spacing 10
+                (image :image-width 16
+                       :path "/usr/share/icons/WhiteSur-dark/status/symbolic/network-wireless-signal-${network.signal > 66 ? "excellent" : network.signal > 33 ? "ok" : "weak"}-symbolic.svg")
+                (label :xalign 0 :hexpand true :limit-width 26 :text {network.ssid})
+                (label :visible {network.secured} :class "muted" :text "🔒")
+                (label :visible {network.active} :class "muted" :text "Connected")
+            )
+        )
+        (revealer :reveal {wifi_connecting_ssid == network.ssid} :transition "slidedown" :duration "150ms"
+            (box :orientation "vertical" :space-evenly false :spacing 4 :class "password-panel"
+                (box :orientation "horizontal" :space-evenly false :spacing 8
+                    (input :class "password-input" :hexpand true
+                           :value wifi_pw_value
+                           :onchange "eww update wifi_pw_value='{}'"
+                           :password {!wifi_pw_visible})
+                    (nav-icon-btn :glyph {wifi_pw_visible ? "🙈" : "👁"}
+                                  :onclick "eww update wifi_pw_visible=${!wifi_pw_visible}"
+                                  :state-class "")
+                    (nav-icon-btn :glyph "↵"
+                                  :onclick "scripts/wifi-connect.sh '${network.ssid}'"
+                                  :state-class "")
+                )
+                (label :visible {wifi_connect_status == "error" && wifi_connecting_ssid == network.ssid}
+                       :class "error-text" :xalign 0 :text "Couldn't connect — check the password")
+            )
+        )
+    )
+)
+
+;; --- Page: Bluetooth ------------------------------------------------------
+
+(defwidget bluetooth_view []
+    (box :orientation "vertical" :space-evenly false :spacing 16 :width 364
+        (box :class "control" :orientation "horizontal" :space-evenly false :spacing 12
+            (nav-icon-btn :glyph "‹" :onclick "eww update cc_view='main'" :state-class "nav-icon-flat")
+            (label :hexpand true :halign "center" :class "view-title" :text "Bluetooth")
+            (nav-icon-btn :glyph "⟳" :onclick "scripts/bluetooth-rescan.sh"
+                          :state-class {bluetooth_scanning ? "nav-icon-flat icon-scanning" : "nav-icon-flat"})
+        )
+        (box :class "control" :orientation "vertical" :space-evenly false :spacing 6
+            (label :xalign 0 :class "muted" :text "Trusted Devices")
+            (scroll :vscroll true :hscroll false :height 120
+                (box :orientation "vertical" :space-evenly false :spacing 8
+                    (for device in bluetooth_paired
+                        (bluetooth-device-row :device device)
+                    )
+                )
+            )
+        )
+        (box :class "control" :orientation "vertical" :space-evenly false :spacing 6
+            (label :xalign 0 :class "muted" :text "Nearby Devices")
+            (scroll :vscroll true :hscroll false :height 160
+                (box :orientation "vertical" :space-evenly false :spacing 8
+                    (for device in bluetooth_nearby
+                        (bluetooth-device-row :device device)
+                    )
+                )
+            )
+        )
+    )
+)
+
+(defwidget bluetooth-device-row [device]
+    (eventbox :class "list-row"
+              :cursor "pointer"
+              :onclick {device.connected ? "scripts/bluetooth-disconnect.sh '${device.mac}'" : "scripts/bluetooth-connect.sh '${device.mac}'"}
+        (box :space-evenly false :spacing 10
+            (image :image-width 16 :path "/usr/share/icons/WhiteSur-dark/status/symbolic/bluetooth-active-symbolic.svg")
+            (label :xalign 0 :hexpand true :limit-width 26 :text {device.name})
+            (label :visible {device.connected} :class "muted" :text "Connected")
+        )
+    )
+)
+
+;; --- Page: Hotspot ---------------------------------------------------------
+
+(defwidget hotspot_view []
+    (box :orientation "vertical" :space-evenly false :spacing 16 :width 364
+        (box :class "control" :orientation "horizontal" :space-evenly false :spacing 12
+            (nav-icon-btn :glyph "‹" :onclick "eww update cc_view='main'" :state-class "nav-icon-flat")
+            (label :hexpand true :halign "center" :class "view-title" :text "Hotspot")
+            (nav-icon-btn :glyph "⟳" :onclick "scripts/hotspot-clients-refresh.sh"
+                          :state-class {hotspot_scanning ? "nav-icon-flat icon-scanning" : "nav-icon-flat"})
+        )
+        (box :class "control" :orientation "vertical" :space-evenly false :spacing 8
+            (label :xalign 0 :class "muted" :text "Network Name")
+            (input :class "password-input" :hexpand true
+                   :value hotspot_ssid_value
+                   :onchange "eww update hotspot_ssid_value='{}'")
+            (label :xalign 0 :class "muted" :text "Password")
+            (box :orientation "horizontal" :space-evenly false :spacing 8
+                (input :class "password-input" :hexpand true
+                       :value hotspot_password_value
+                       :onchange "eww update hotspot_password_value='{}'"
+                       :password {!hotspot_pw_visible})
+                (nav-icon-btn :glyph {hotspot_pw_visible ? "🙈" : "👁"}
+                              :onclick "eww update hotspot_pw_visible=${!hotspot_pw_visible}"
+                              :state-class "")
+                (nav-icon-btn :glyph "↵"
+                              :onclick "scripts/hotspot-configure.sh"
+                              :state-class "")
+            )
+            (label :visible {hotspot_configure_status == "error"}
+                   :class "error-text" :xalign 0
+                   :text "Needs a name, and a password of 8+ characters (or none for an open network)")
+            (label :visible {hotspot_configure_status == "saved"}
+                   :class "muted" :xalign 0
+                   :text "Saved")
+        )
+        (box :class "control" :orientation "vertical" :space-evenly false :spacing 6
+            (label :xalign 0 :class "muted" :text "Connected Devices")
+            (scroll :vscroll true :hscroll false :height 140
+                (box :orientation "vertical" :space-evenly false :spacing 8
+                    (for client in hotspot_clients
+                        (box :class "list-row" :space-evenly false :spacing 10
+                            (label :xalign 0 :hexpand true :text {client.mac})
+                        )
+                    )
+                )
+            )
+        )
     )
 )

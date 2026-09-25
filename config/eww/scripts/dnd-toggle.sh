@@ -6,6 +6,7 @@ set -uo pipefail
 source "$(dirname "$0")/lib.sh"
 
 current=$(cat "$HOME/.cache/dnd-mode" 2>/dev/null || echo off)
+token=$(new_click_token dnd)
 
 if [[ "$current" == "off" ]]; then
     eww_set dnd_state on
@@ -20,5 +21,7 @@ action_rc=$?
 
 sleep 0.2
 real=$(cat "$HOME/.cache/dnd-mode" 2>/dev/null || echo off)
-eww_set dnd_state "$real"
+if is_latest_click dnd "$token"; then
+    eww_set dnd_state "$real"
+fi
 log dnd "confirmed=$real (dnd.py exit $action_rc)"
