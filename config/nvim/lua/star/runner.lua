@@ -26,10 +26,11 @@
 local TMUX_SHELL = "zsh"
 local TMP_DIR = "/tmp/nvim-run"
 
--- ── Helpers ───────────────────────────────────────────────────────────────────
 
+-- ── Helpers ───────────────────────────────────────────────────────────────────
 local function notify(msg, level)
-    vim.notify(msg, level or vim.log.levels.INFO, {
+    vim.notify(msg, level or vim.log.levels.INFO,
+    {
         title = "Runner",
     })
 end
@@ -169,15 +170,13 @@ local function run_project_command(name)
 
     if not command then
         notify(".nvim has no '" .. name .. "' command.", vim.log.levels.WARN)
+
         return true
     end
 
     notify("Running " .. name .. ": " .. command)
 
-    tmux(
-        "cd " .. vim.fn.shellescape(root) .. " && " .. command,
-        "nvim-" .. name
-    )
+    tmux("cd " .. vim.fn.shellescape(root) .. " && " .. command, "nvim-" .. name)
 
     return true
 end
@@ -187,7 +186,6 @@ end
 --
 -- These are deliberately limited to languages where the basic command is
 -- predictable. For everything else, create a `.nvim` file.
-
 local function fallback_run()
     local file = vim.fn.expand("%:p")
     local ext = vim.fn.expand("%:e")
@@ -201,7 +199,8 @@ local function fallback_run()
         if vim.fn.isdirectory(venv) == 0 then
             notify("No venv found - creating one…", vim.log.levels.WARN)
 
-            local result = vim.fn.system({
+            local result = vim.fn.system(
+            {
                 "python3",
                 "-m",
                 "venv",
@@ -209,10 +208,7 @@ local function fallback_run()
             })
 
             if vim.v.shell_error ~= 0 then
-                notify(
-                    "Failed to create Python venv: " .. result,
-                    vim.log.levels.ERROR
-                )
+                notify("Failed to create Python venv: " .. result, vim.log.levels.ERROR)
 
                 return
             end
@@ -269,10 +265,7 @@ local function fallback_run()
         return
     end
 
-    notify(
-        "No .nvim file and no fallback runner for ." .. ext,
-        vim.log.levels.WARN
-    )
+    notify("No .nvim file and no fallback runner for ." .. ext, vim.log.levels.WARN)
 end
 
 
@@ -287,40 +280,37 @@ local function run(name)
 
     if name == "run" then
         fallback_run()
+
         return
     end
 
-    notify(
-        "No .nvim file - '" .. name .. "' has no fallback.",
-        vim.log.levels.WARN
-    )
+    notify("No .nvim file - '" .. name .. "' has no fallback.", vim.log.levels.WARN)
 end
 
-
 -- ── Keymaps ───────────────────────────────────────────────────────────────────
-
 -- <leader>rr - run
 vim.keymap.set("n", "<leader>rr", function()
     run("run")
-end, {
+end,
+{
     silent = true,
     desc = "Run project",
 })
 
-
 -- <leader>rd - dev
 vim.keymap.set("n", "<leader>rd", function()
     run("dev")
-end, {
+end,
+{
     silent = true,
     desc = "Run dev command",
 })
 
-
 -- <leader>rt - test
 vim.keymap.set("n", "<leader>rt", function()
     run("test")
-end, {
+end,
+{
     silent = true,
     desc = "Run tests",
 })
@@ -329,13 +319,12 @@ end, {
 vim.keymap.set("n", "<leader>rc", function()
     local root = project_root()
     local path = root .. "/.nvim"
-
     if vim.fn.filereadable(path) == 1 then
         notify(".nvim already exists.", vim.log.levels.WARN)
         return
     end
-
-    local template = {
+    local template =
+    {
         "# Neovim project commands",
         "# Commands are executed from the project root.",
         "#",
@@ -349,13 +338,11 @@ vim.keymap.set("n", "<leader>rc", function()
         "test =",
         "",
     }
-
     vim.fn.writefile(template, path)
-
     notify("Created .nvim")
-
     vim.cmd.edit(vim.fn.fnameescape(path))
-end, {
+end,
+{
     silent = true,
     desc = "Create project .nvim",
 })

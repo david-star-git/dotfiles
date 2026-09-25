@@ -34,7 +34,7 @@ require("nvim-treesitter").setup(
         "vue",
     },
     sync_install = false, -- install grammars asynchronously
-    auto_install = true,  -- install missing grammars on first open
+    auto_install = true, -- install missing grammars on first open
 })
 
 -- Improve Django/Jinja template highlighting by linking HTML tag highlight
@@ -44,3 +44,4 @@ vim.cmd([[
     highlight link htmlTagDelimiter Statement
     highlight link htmlSpecialChar Keyword
 ]])
+

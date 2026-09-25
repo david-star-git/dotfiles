@@ -5,7 +5,7 @@
 -- Supports hex, short hex, rgb, hsl, ansi, xterm256, CSS variables, and
 -- named colors. Tailwind is disabled (enable if working with Tailwind CSS).
 --
--- Render mode is "virtual" — a small ■ symbol appears inline next to the color
+-- Render mode is "virtual" - a small ■ symbol appears inline next to the color
 -- value without modifying the actual background of the text.
 -- =============================================================================
 

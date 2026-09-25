@@ -14,6 +14,7 @@ require("mason-lspconfig").setup(
 {
     ensure_installed =
     {
+        "clangd",
         "cssls",
         "dockerls",
         "docker_compose_language_service",
@@ -22,14 +23,17 @@ require("mason-lspconfig").setup(
         "lua_ls",
         "neocmake",
         "pyright",
-        "ts_ls",
         "vtsls",
         "yamlls",
     },
 })
 
 -- mason-tool-installer handles everything mason-lspconfig can't:
--- formatters, linters, and tools that aren't LSP servers.
+-- formatters, linters, and tools that aren't LSP servers. clangd itself
+-- moved to mason-lspconfig above, since it IS an LSP server - it was
+-- being installed here but never activated (see `servers` below), so it
+-- sat on disk unused and C/C++ files had no LSP client at all: no
+-- semantic completion, just buffer-word matching.
 require("mason-tool-installer").setup(
 {
     ensure_installed =
@@ -40,7 +44,6 @@ require("mason-tool-installer").setup(
         "ruff",
         "pyright",
         -- C / C++ / CMake
-        "clangd",
         "clang-format",
         "cmakelang",
         "cmakelint",
@@ -64,22 +67,30 @@ require("mason-tool-installer").setup(
 
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
--- Shared on_attach — LSP keymaps that activate only when a server is running.
+-- Shared on_attach - LSP keymaps that activate only when a server is running.
 local on_attach = function(client, bufnr)
     local map = function(lhs, rhs)
         vim.keymap.set("n", lhs, rhs, { buffer = bufnr, silent = true })
     end
     map("<leader>d", vim.lsp.buf.definition)
-    map("K",         vim.lsp.buf.hover)
+    map("K", vim.lsp.buf.hover)
     map("<leader>rn", vim.lsp.buf.rename)
     map("<leader>ca", vim.lsp.buf.code_action)
+
+    -- Parameter hints in a small floating window while typing a call's
+    -- arguments - which function you're in, which parameter you're on.
+    require("lsp_signature").on_attach(
+    {
+        hint_enable = false, -- skip the virtual-text hint; the floating window alone is enough
+        handler_opts = { border = "rounded" },
+    }, bufnr)
 end
 
 -- Apply shared defaults to every server via the wildcard config.
 vim.lsp.config("*",
 {
     capabilities = capabilities,
-    on_attach    = on_attach,
+    on_attach = on_attach,
 })
 
 -- lua_ls needs extra config to understand the nvim runtime environment.
@@ -90,17 +101,23 @@ vim.lsp.config("lua_ls",
     {
         Lua =
         {
-            runtime    = { version = "LuaJIT" },
+            runtime = { version = "LuaJIT" },
             diagnostics = { globals = { "vim" } },
-            workspace  = { library = vim.api.nvim_get_runtime_file("", true) },
-            telemetry  = { enable = false },
+            workspace = { library = vim.api.nvim_get_runtime_file("", true) },
+            telemetry = { enable = false },
         },
     },
 })
 
 -- Activate all servers declared in ensure_installed above.
+-- vtsls only, not ts_ls: running both against the same JS/TS buffer means
+-- every completion, diagnostic, and hover result shows up twice, from two
+-- separate servers both racing to answer the same request. vtsls wraps the
+-- actual VS Code TypeScript extension, so it's the closer match for an
+-- IDE-like completion experience; ts_ls is the older, plainer client.
 local servers =
 {
+    "clangd",
     "cssls",
     "dockerls",
     "docker_compose_language_service",
@@ -109,7 +126,6 @@ local servers =
     "lua_ls",
     "neocmake",
     "pyright",
-    "ts_ls",
     "vtsls",
     "yamlls",
 }
@@ -117,3 +133,4 @@ local servers =
 for _, server in ipairs(servers) do
     vim.lsp.enable(server)
 end
+

@@ -4,7 +4,7 @@
 -- Shows the current file, project, and elapsed time on Discord.
 -- The hover text (shown when someone inspects the Neovim icon) is randomly
 -- selected from a list of sarcastic developer quotes on each nvim startup.
--- Commented-out entries are available — uncomment to add them to the pool.
+-- Commented-out entries are available - uncomment to add them to the pool.
 -- =============================================================================
 
 local hover_texts =

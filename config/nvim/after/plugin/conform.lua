@@ -57,9 +57,11 @@ local conform = require("conform")
 -- not just vanish). Returns {} for a truly empty string so callers can tell
 -- "the tool produced nothing" apart from "the tool produced one blank line".
 local function split_lines(text)
-    if text == "" then return {} end
+    if text == "" then
+        return {}
+    end
 
-    local out    = {}
+    local out = {}
     local normalized = text:gsub("\r\n", "\n"):gsub("\r", "\n")
 
     for s in (normalized .. "\n"):gmatch("(.-)\n") do
@@ -73,7 +75,7 @@ end
 -- run_cmd_on_buf: pipe the buffer through an external shell command and return
 -- the result as a table of lines. Falls back to the original lines on failure.
 local function run_cmd_on_buf(bufnr, cmd_parts)
-    local lines   = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     local content = table.concat(lines, "\n")
 
     -- Every argument is shell-escaped individually here so callers never
@@ -94,10 +96,8 @@ local function run_cmd_on_buf(bufnr, cmd_parts)
     -- turned into an actual newline) before the formatter ever saw it.
     -- printf's %s argument is never escape-processed, so content survives
     -- byte-for-byte.
-    local handle = io.popen(
-        "printf '%s\\n' " .. vim.fn.shellescape(content)
-        .. " | " .. table.concat(escaped_parts, " ")
-    )
+    local handle =
+        io.popen("printf '%s\\n' " .. vim.fn.shellescape(content) .. " | " .. table.concat(escaped_parts, " "))
 
     if not handle then
         return lines
@@ -135,10 +135,10 @@ local function is_comment(line)
     local t = line:match("^%s*(.-)%s*$")
 
     return t:match("^//")
-        or t:match("^#[^!]")   -- # but not shebang (#!)
+        or t:match("^#[^!]") -- # but not shebang (#!)
         or t:match("^%-%-")
         or t:match("^/%*")
-        or t:match("^%*")      -- continuation lines inside /* ... */
+        or t:match("^%*") -- continuation lines inside /* ... */
         or t:match("^<!%-%-")
         or false
 
@@ -159,9 +159,13 @@ end
 
 -- is_top_level_def: a function or class definition at indent level 0.
 local function is_top_level_def(line, lang)
-    if is_comment(line) then return false end
+    if is_comment(line) then
+        return false
+    end
 
-    if indent_of(line) ~= 0 then return false end
+    if indent_of(line) ~= 0 then
+        return false
+    end
 
     local t = trimmed(line)
 
@@ -200,9 +204,7 @@ local function is_top_level_def(line, lang)
     end
 
     if lang == "python" then
-        return t:match("^def%s") ~= nil
-            or t:match("^class%s") ~= nil
-            or t:match("^async%s+def%s") ~= nil
+        return t:match("^def%s") ~= nil or t:match("^class%s") ~= nil or t:match("^async%s+def%s") ~= nil
     end
 
     if lang == "c" or lang == "cpp" then
@@ -212,8 +214,8 @@ local function is_top_level_def(line, lang)
             and not t:match("^for%s*%(")
             and not t:match("^switch%s*%(")
             and not t:match("^return")
-            and not t:match(";%s*$")   -- forward declarations / calls, not defs
-            and not t:match(",%s*$")   -- multi-line call continuation
+            and not t:match(";%s*$") -- forward declarations / calls, not defs
+            and not t:match(",%s*$") -- multi-line call continuation
 
     end
 
@@ -229,32 +231,36 @@ end
 
 -- is_method_def: a function or method definition at indent > 0.
 local function is_method_def(line, lang)
-    if is_comment(line) then return false end
+    if is_comment(line) then
+        return false
+    end
 
-    if indent_of(line) == 0 then return false end
+    if indent_of(line) == 0 then
+        return false
+    end
 
     local t = trimmed(line)
 
     if lang == "lua" then
-        return t:match("^function%s") ~= nil
-            or t:match("^local%s+function%s") ~= nil
+        return t:match("^function%s") ~= nil or t:match("^local%s+function%s") ~= nil
     end
 
     if lang == "javascript" or lang == "typescript" then
         return t:match("^function%s") ~= nil
             or t:match("^async%s+function%s") ~= nil
             or t:match("^const%s+%w+%s*=.*=>") ~= nil
-            or (t:match("^%w+%s*%(.*%)%s*{?$") ~= nil
+            or (
+                t:match("^%w+%s*%(.*%)%s*{?$") ~= nil
                 and not t:match("^if%s*%(")
                 and not t:match("^while%s*%(")
                 and not t:match("^for%s*%(")
                 and not t:match("^switch%s*%(")
-                and not t:match("^catch%s*%("))
+                and not t:match("^catch%s*%(")
+            )
     end
 
     if lang == "python" then
-        return t:match("^def%s") ~= nil
-            or t:match("^async%s+def%s") ~= nil
+        return t:match("^def%s") ~= nil or t:match("^async%s+def%s") ~= nil
     end
 
     if lang == "c" or lang == "cpp" or lang == "java" then
@@ -272,6 +278,7 @@ local function is_method_def(line, lang)
             and not t:match("^new%s")
             and not t:match(";%s*$")
             and not t:match(",%s*$")
+
     end
 
     return false
@@ -283,18 +290,15 @@ local function is_import(line, lang)
     local t = trimmed(line)
 
     if lang == "lua" then
-        return t:match("^local%s+%w+%s*=%s*require") ~= nil
-            or t:match("^require%s*%(") ~= nil
+        return t:match("^local%s+%w+%s*=%s*require") ~= nil or t:match("^require%s*%(") ~= nil
     end
 
     if lang == "javascript" or lang == "typescript" then
-        return t:match("^import%s") ~= nil
-            or t:match("^const%s+%w+%s*=%s*require") ~= nil
+        return t:match("^import%s") ~= nil or t:match("^const%s+%w+%s*=%s*require") ~= nil
     end
 
     if lang == "python" then
-        return t:match("^import%s") ~= nil
-            or t:match("^from%s+%S+%s+import") ~= nil
+        return t:match("^import%s") ~= nil or t:match("^from%s+%S+%s+import") ~= nil
     end
 
     if lang == "c" or lang == "cpp" then
@@ -315,7 +319,9 @@ end
 local function is_block_opener(line, lang)
     -- Comments can never open a block. A comment that happens to end with
     -- "then", "do", ":", or "{" is still just a comment.
-    if is_comment(line) then return false end
+    if is_comment(line) then
+        return false
+    end
 
     local t = trimmed(line)
 
@@ -353,10 +359,12 @@ local function is_block_opener(line, lang)
     end
 
     if lang == "c" or lang == "cpp" or lang == "java" then
-        return t == "{" or t:match("{$") ~= nil
+        return t == "{"
+            or t:match("{$") ~= nil
             or t:match("^}%s*else") ~= nil
             or t:match("^}%s*catch") ~= nil
             or t:match("^}%s*finally") ~= nil
+
     end
 
     return false
@@ -367,13 +375,18 @@ end
 -- follow a plain statement (not a blank, not a comment, not a block opener,
 -- not inside brackets). Skipped for Python - black handles Python spacing.
 local function is_control_keyword(line, lang)
-    if lang == "python" then return false end
+    if lang == "python" then
+        return false
+    end
     -- Comments are never control keywords.
-    if is_comment(line) then return false end
+    if is_comment(line) then
+        return false
+    end
 
     local t = trimmed(line)
 
-    return t:match("^return[%s;]") ~= nil or t == "return"
+    return t:match("^return[%s;]") ~= nil
+        or t == "return"
         or t:match("^if[%s%(]") ~= nil
         or t:match("^for[%s%(]") ~= nil
         or t:match("^while[%s%(]") ~= nil
@@ -408,16 +421,16 @@ end
 -- disabling every bracket_depth == 0 gated rule (including the blank line
 -- between methods this file exists to add) for everything inside.
 local function count_net_brackets(line)
-    local net       = 0
-    local in_string = nil   -- nil, or the quote character we're inside
-    local i, n      = 1, #line
+    local net = 0
+    local in_string = nil -- nil, or the quote character we're inside
+    local i, n = 1, #line
 
     while i <= n do
         local c = line:sub(i, i)
 
         if in_string then
             if c == "\\" then
-                i = i + 1   -- skip the escaped character, whatever it is
+                i = i + 1 -- skip the escaped character, whatever it is
             elseif c == in_string then
                 in_string = nil
             end
@@ -471,7 +484,7 @@ end
 -- This keeps intentional groupings (stdlib / third-party / local) intact.
 local function sort_imports(lines, lang)
     local out = {}
-    local i   = 1
+    local i = 1
 
     while i <= #lines do
         if not is_import(lines[i], lang) then
@@ -481,18 +494,16 @@ local function sort_imports(lines, lang)
             -- Collect the full import region including internal blank lines.
             local region = {}
 
-            while i <= #lines
-                and (is_import(lines[i], lang)
-                    or (is_blank(lines[i])
-                        and i < #lines
-                        and is_import(lines[i + 1], lang)))
+            while
+                i <= #lines
+                and (is_import(lines[i], lang) or (is_blank(lines[i]) and i < #lines and is_import(lines[i + 1], lang)))
             do
                 table.insert(region, lines[i])
                 i = i + 1
             end
 
             -- Split region at blank lines into independent groups.
-            local groups  = {}
+            local groups = {}
             local current = {}
 
             for _, rline in ipairs(region) do
@@ -562,7 +573,7 @@ local function sort_html_classes(lines)
                 table.insert(out, line)
             else
                 local this_indent = prefix:match("^(%s*)")
-                local step        = this_indent .. "    "
+                local step = this_indent .. "    "
                 table.insert(out, prefix .. 'class="' .. cls_list[1])
 
                 for j = 2, #cls_list - 1 do
@@ -612,7 +623,9 @@ local function sort_html_attributes(lines)
                 local c = rest:sub(i, i)
 
                 if in_quote then
-                    if c == in_quote then in_quote = nil end
+                    if c == in_quote then
+                        in_quote = nil
+                    end
                 elseif c == '"' or c == "'" then
                     in_quote = c
                 elseif c == ">" then
@@ -624,7 +637,7 @@ local function sort_html_attributes(lines)
             end
 
             if close_pos then
-                local inner    = rest:sub(1, close_pos - 1)
+                local inner = rest:sub(1, close_pos - 1)
                 local trailing = rest:sub(close_pos + 1)
                 local self_closing = inner:match("/%s*$") ~= nil
 
@@ -644,16 +657,21 @@ local function sort_html_attributes(lines)
                 while j <= m do
                     local ws_e = inner:find("[^%s]", j)
 
-                    if not ws_e then break end
+                    if not ws_e then
+                        break
+                    end
 
                     j = ws_e
 
                     local name_s, name_e = inner:find("^[%w%-:%.]+", j)
 
-                    if not name_s then ok = false break end
+                    if not name_s then
+                        ok = false
+                        break
+                    end
 
                     local name = inner:sub(name_s, name_e)
-                    local k    = name_e + 1
+                    local k = name_e + 1
                     local eq_e = inner:match("^%s*=%s*()", k)
 
                     if eq_e then
@@ -662,7 +680,10 @@ local function sort_html_attributes(lines)
                         if qchar == '"' or qchar == "'" then
                             local _, val_e = inner:find(qchar .. "[^" .. qchar .. "]*" .. qchar, eq_e)
 
-                            if not val_e then ok = false break end
+                            if not val_e then
+                                ok = false
+                                break
+                            end
 
                             local value = inner:sub(eq_e + 1, val_e - 1)
                             local raw
@@ -678,7 +699,10 @@ local function sort_html_attributes(lines)
                         else
                             local _, val_e = inner:find("^%S+", eq_e)
 
-                            if not val_e then ok = false break end
+                            if not val_e then
+                                ok = false
+                                break
+                            end
 
                             table.insert(attrs, { name = name, raw = inner:sub(name_s, val_e) })
                             j = val_e + 1
@@ -733,7 +757,7 @@ local INDENT = "    "
 
 
 local function allman_css_rewriter(lines)
-    local out   = {}
+    local out = {}
     local level = 0
 
     for _, line in ipairs(lines) do
@@ -798,8 +822,8 @@ local function js_allman_rewriter(lines)
             local code = line:gsub("//%s*.*$", ""):match("^(.-)%s*$")
 
             if code:match("[^{]{$") or code == "{" then
-                local ind    = line:match("^(%s*)")
-                local t      = trimmed(code)
+                local ind = line:match("^(%s*)")
+                local t = trimmed(code)
                 local before = t:gsub("{%s*$", ""):match("^(.-)%s*$")
 
                 if before == "" then
@@ -832,8 +856,8 @@ local function lua_allman_rewriter(lines)
             local code = line:gsub("%-%-%s*.*$", ""):match("^(.-)%s*$")
 
             if code:match("[^{]{$") then
-                local ind    = line:match("^(%s*)")
-                local t      = trimmed(line)
+                local ind = line:match("^(%s*)")
+                local t = trimmed(line)
                 local before = t:gsub("{%s*$", ""):match("^(.-)%s*$")
 
                 if before ~= "" then
@@ -922,22 +946,22 @@ local function universal_post_processor(lines, lang)
     --   next non-blank, non-comment, non-decorator line. If that line is a
     --   top-level def, we insert TWO blank lines BEFORE the comment so the
     --   definition visually "owns" the spacing above it.
-    local out                = {}
-    local bracket_depth      = 0
-    local in_docstring       = false
-    local docstring_delim    = nil
-    local prev_was_blank     = true
-    local prev_was_comment   = false
-    local prev_was_opener    = false
+    local out = {}
+    local bracket_depth = 0
+    local in_docstring = false
+    local docstring_delim = nil
+    local prev_was_blank = true
+    local prev_was_comment = false
+    local prev_was_opener = false
     local prev_was_decorator = false
-    local same_kw_run        = 0
-    local prev_keyword       = nil
+    local same_kw_run = 0
+    local prev_keyword = nil
 
     -- Docstring delimiter constants built from char codes to avoid any
     -- confusion with Lua string quoting (these are the literal sequences
     -- triple-double-quote and triple-single-quote).
-    local DTRIPLE = string.char(34, 34, 34)   -- """
-    local STRIPLE = string.char(39, 39, 39)   -- '''
+    local DTRIPLE = string.char(34, 34, 34) -- """
+    local STRIPLE = string.char(39, 39, 39) -- '''
 
     -- next_code_idx: index of the first line at or after `start` that is not
     -- blank, not a comment, and not a decorator (@something). Used to look
@@ -946,10 +970,7 @@ local function universal_post_processor(lines, lang)
         for j = start, #arr do
             local l = arr[j]
 
-            if not is_blank(l)
-                and not is_comment(l)
-                and not trimmed(l):match("^@%w")
-            then
+            if not is_blank(l) and not is_comment(l) and not trimmed(l):match("^@%w") then
                 return j
             end
         end
@@ -975,7 +996,6 @@ local function universal_post_processor(lines, lang)
     end
 
     for i, line in ipairs(lines) do
-
         -- ── Multi-line string passthrough ─────────────────────────────────────
         -- When inside a docstring every line (including blank lines) is emitted
         -- verbatim. We check for the closing delimiter with plain find() to
@@ -984,7 +1004,7 @@ local function universal_post_processor(lines, lang)
             table.insert(out, line)
 
             if line:find(docstring_delim, 1, true) then
-                in_docstring  = false
+                in_docstring = false
                 docstring_delim = nil
             end
 
@@ -995,17 +1015,17 @@ local function universal_post_processor(lines, lang)
         -- A comment containing """ or [[ is just a comment - never a docstring.
         if not is_comment(line) then
             local opener = nil
-            local close  = nil
+            local close = nil
 
             if line:find(DTRIPLE, 1, true) then
                 opener = DTRIPLE
-                close  = DTRIPLE
+                close = DTRIPLE
             elseif line:find(STRIPLE, 1, true) then
                 opener = STRIPLE
-                close  = STRIPLE
+                close = STRIPLE
             elseif line:find("[[", 1, true) then
                 opener = "[["
-                close  = "]]"
+                close = "]]"
             end
 
             if opener then
@@ -1014,14 +1034,14 @@ local function universal_post_processor(lines, lang)
 
                 -- Opens and closes on the same line: single-line string, no state.
                 if not e then
-                    in_docstring  = true
+                    in_docstring = true
                     docstring_delim = close
                 end
 
                 table.insert(out, line)
-                prev_was_blank    = false
-                prev_was_comment  = false
-                prev_was_opener   = false
+                prev_was_blank = false
+                prev_was_comment = false
+                prev_was_opener = false
                 prev_was_decorator = false
 
                 goto continue
@@ -1067,13 +1087,13 @@ local function universal_post_processor(lines, lang)
             end
 
             table.insert(out, line)
-            prev_was_comment  = true
-            prev_was_blank    = false
-            prev_was_opener   = false
+            prev_was_comment = true
+            prev_was_blank = false
+            prev_was_opener = false
             prev_was_decorator = false
-            prev_keyword      = nil
+            prev_keyword = nil
 
-            same_kw_run       = 0
+            same_kw_run = 0
 
             goto continue
         end
@@ -1081,10 +1101,10 @@ local function universal_post_processor(lines, lang)
         -- ── From here: non-blank, non-comment, non-docstring code ─────────────
         -- Save the pre-reset values so the decorator / def handlers can inspect
         -- what immediately preceded this line before the flags are cleared.
-        local was_comment   = prev_was_comment
+        local was_comment = prev_was_comment
         local was_decorator = prev_was_decorator
-        local was_opener    = prev_was_opener
-        prev_was_comment    = false
+        local was_opener = prev_was_opener
+        prev_was_comment = false
 
         -- prev_was_decorator is reset per-branch below, not here globally.
         -- ── Decorator lines (@something) ──────────────────────────────────────
@@ -1103,13 +1123,13 @@ local function universal_post_processor(lines, lang)
             end
 
             table.insert(out, line)
-            prev_was_blank     = false
-            prev_was_opener    = false
+            prev_was_blank = false
+            prev_was_opener = false
             prev_was_decorator = true
-            prev_keyword       = nil
+            prev_keyword = nil
 
-            same_kw_run        = 0
-            bracket_depth      = math.max(0, bracket_depth + count_net_brackets(line))
+            same_kw_run = 0
+            bracket_depth = math.max(0, bracket_depth + count_net_brackets(line))
 
             goto continue
         end
@@ -1123,13 +1143,13 @@ local function universal_post_processor(lines, lang)
             end
 
             table.insert(out, line)
-            prev_was_blank     = false
-            prev_was_opener    = is_block_opener(line, lang)
+            prev_was_blank = false
+            prev_was_opener = is_block_opener(line, lang)
             prev_was_decorator = false
-            prev_keyword       = nil
+            prev_keyword = nil
 
-            same_kw_run        = 0
-            bracket_depth      = math.max(0, bracket_depth + count_net_brackets(line))
+            same_kw_run = 0
+            bracket_depth = math.max(0, bracket_depth + count_net_brackets(line))
 
             goto continue
         end
@@ -1143,13 +1163,13 @@ local function universal_post_processor(lines, lang)
             end
 
             table.insert(out, line)
-            prev_was_blank     = false
-            prev_was_opener    = is_block_opener(line, lang)
+            prev_was_blank = false
+            prev_was_opener = is_block_opener(line, lang)
             prev_was_decorator = false
-            prev_keyword       = nil
+            prev_keyword = nil
 
-            same_kw_run        = 0
-            bracket_depth      = math.max(0, bracket_depth + count_net_brackets(line))
+            same_kw_run = 0
+            bracket_depth = math.max(0, bracket_depth + count_net_brackets(line))
 
             goto continue
         end
@@ -1158,7 +1178,8 @@ local function universal_post_processor(lines, lang)
         -- When the original had a blank line between two non-def, non-import
         -- lines at bracket depth 0, keep it. This preserves intentional spacing
         -- in constant / configuration blocks.
-        if bracket_depth == 0
+        if
+            bracket_depth == 0
             and prev_was_blank
             and not was_comment
             and not prev_was_opener
@@ -1192,7 +1213,8 @@ local function universal_post_processor(lines, lang)
         -- One blank line before return / if / for / while / repeat when the
         -- preceding output line is plain code. Skipped for Python (black handles
         -- Python spacing) and when inside brackets.
-        if bracket_depth == 0
+        if
+            bracket_depth == 0
             and not prev_was_blank
             and not prev_was_opener
             and not was_decorator
@@ -1208,12 +1230,12 @@ local function universal_post_processor(lines, lang)
 
         -- ── Emit ──────────────────────────────────────────────────────────────
         table.insert(out, line)
-        prev_was_blank     = false
-        prev_was_opener    = is_block_opener(line, lang)
+        prev_was_blank = false
+        prev_was_opener = is_block_opener(line, lang)
         prev_was_decorator = false
-        prev_keyword       = this_keyword
+        prev_keyword = this_keyword
 
-        bracket_depth      = math.max(0, bracket_depth + count_net_brackets(line))
+        bracket_depth = math.max(0, bracket_depth + count_net_brackets(line))
 
         ::continue::
     end
@@ -1233,7 +1255,6 @@ local function universal_post_processor(lines, lang)
     -- CRITICAL: docstring detection here, just like in pass 4, must skip comment
     -- lines. A comment that mentions """ or [[ is just a comment.
     do
-
         local function find_header_end(arr)
             local i = 1
             -- Skip optional shebang.
@@ -1246,24 +1267,24 @@ local function universal_post_processor(lines, lang)
                 i = i + 1
             end
 
-            if not arr[i] then return nil end
+            if not arr[i] then
+                return nil
+            end
 
             -- The header must start with a comment line or a docstring opener
             -- on a non-comment line.
             local first = arr[i]
-            local opens_comment   = is_comment(first)
+            local opens_comment = is_comment(first)
             local opens_docstring = not is_comment(first)
-                and (first:find(DTRIPLE, 1, true)
-                     or first:find(STRIPLE, 1, true)
-                     or first:find("[[", 1, true))
+                and (first:find(DTRIPLE, 1, true) or first:find(STRIPLE, 1, true) or first:find("[[", 1, true))
 
             if not opens_comment and not opens_docstring then
                 return nil
             end
 
             local last_header = nil
-            local in_doc      = false
-            local doc_close   = nil
+            local in_doc = false
+            local doc_close = nil
 
             while arr[i] do
                 local l = arr[i]
@@ -1272,34 +1293,31 @@ local function universal_post_processor(lines, lang)
                     last_header = i
 
                     if l:find(doc_close, 1, true) then
-                        in_doc    = false
+                        in_doc = false
                         doc_close = nil
                     end
 
                     i = i + 1
-
                 elseif is_comment(l) then
                     -- Plain comment line - part of the header.
                     -- Do NOT check for docstring delimiters here: a comment that
                     -- contains """ or [[ is just a comment, not a docstring opener.
                     last_header = i
                     i = i + 1
-
-                elseif not is_comment(l)
-                    and (l:find(DTRIPLE, 1, true)
-                         or l:find(STRIPLE, 1, true)
-                         or l:find("[[", 1, true))
+                elseif
+                    not is_comment(l)
+                    and (l:find(DTRIPLE, 1, true) or l:find(STRIPLE, 1, true) or l:find("[[", 1, true))
                 then
                     -- Docstring opener on a non-comment line.
-                    local opener = l:find(DTRIPLE, 1, true) and DTRIPLE
-                               or  l:find(STRIPLE, 1, true) and STRIPLE
-                               or  "[["
-                    local close  = (opener == "[[") and "]]" or opener
-                    local s      = l:find(opener, 1, true)
-                    local e      = l:find(close, s + #opener, true)
+                    local opener = l:find(DTRIPLE, 1, true) and DTRIPLE or l:find(STRIPLE, 1, true) and STRIPLE or "[["
+                    local close = (opener == "[[") and "]]" or opener
+                    local s = l:find(opener, 1, true)
+                    local e = l:find(close, s + #opener, true)
+
                     last_header = i
+
                     if not e then
-                        in_doc    = true
+                        in_doc = true
                         doc_close = close
                     end
                     i = i + 1
@@ -1309,9 +1327,11 @@ local function universal_post_processor(lines, lang)
                     break
                 end
             end
+
             return last_header
         end
         local hend = find_header_end(out)
+
         if hend then
             -- Remove all blank lines currently after the header.
             while out[hend + 1] and is_blank(out[hend + 1]) do
@@ -1339,18 +1359,16 @@ local function universal_post_processor(lines, lang)
     --   )         followed by a blank line already (collapse pass handles excess)
     if lang == "python" then
         local i = 1
+
         while i <= #out do
             local t = trimmed(out[i])
             -- A standalone closing bracket with no trailing comma.
-            if (t == ")" or t == "}" or t == "]") then
+            if t == ")" or t == "}" or t == "]" then
                 local next_line = out[i + 1]
                 -- Only insert a blank when the next line exists and is not
                 -- already blank and is not another closing bracket (to avoid
                 -- blanks inside nested structures).
-                if next_line
-                    and not is_blank(next_line)
-                    and not trimmed(next_line):match("^[%)%}%]]")
-                then
+                if next_line and not is_blank(next_line) and not trimmed(next_line):match("^[%)%}%]]") then
                     table.insert(out, i + 1, "")
                     i = i + 2
                 else
@@ -1370,16 +1388,19 @@ local function universal_post_processor(lines, lang)
     -- { or } line, not already blank), insert one blank line before it.
     if lang == "css" then
         local i = 1
+
         while i <= #out do
             local line = out[i]
-            local t    = trimmed(line)
+            local t = trimmed(line)
             -- Detect an inline comment on this line.
             local has_inline_comment = t:match("/%*") ~= nil
-                and not t:match("^/%*")   -- exclude lines that ARE a comment (start with /*)
+                and not t:match("^/%*") -- exclude lines that ARE a comment (start with /*)
                 and not t:match("^%*")
+
             if has_inline_comment and i > 1 then
                 local prev = out[i - 1]
-                if not is_blank(prev)
+                if
+                    not is_blank(prev)
                     and not trimmed(prev):match("^{")
                     and not trimmed(prev):match("^}")
                     and not is_comment(prev)
@@ -1397,9 +1418,11 @@ local function universal_post_processor(lines, lang)
     -- ── Pass 5: collapse runs of 3+ blank lines down to 2 ────────────────────
     local collapsed = {}
     local blank_run = 0
+
     for _, line in ipairs(out) do
         if is_blank(line) then
             blank_run = blank_run + 1
+
             if blank_run <= 2 then
                 table.insert(collapsed, "")
             end
@@ -1417,8 +1440,11 @@ local function universal_post_processor(lines, lang)
         table.remove(collapsed)
     end
     table.insert(collapsed, "")
+
     return collapsed
 end
+
+
 -- =============================================================================
 -- Formatter definitions
 -- =============================================================================
@@ -1433,35 +1459,49 @@ conform.formatters.clang_format_allman =
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
-        local ft    = vim.bo[bufnr].filetype
+
+        if not bufnr then
+            return {}
+        end
+        local ft = vim.bo[bufnr].filetype
         local fname = ctx.filename or vim.api.nvim_buf_get_name(bufnr)
         local lines = run_cmd_on_buf(bufnr,
         {
             "clang-format",
             "--style={BasedOnStyle: WebKit, BreakBeforeBraces: Allman, IndentWidth: 4}",
-            "--assume-filename", fname,
+            "--assume-filename",
+            fname,
         })
+
         return apply_to_buf(bufnr, universal_post_processor(lines, ft))
     end,
 }
+
+
 conform.formatters.clang_format_standard =
 {
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
-        local ft    = vim.bo[bufnr].filetype
+
+        if not bufnr then
+            return {}
+        end
+        local ft = vim.bo[bufnr].filetype
         local fname = ctx.filename or vim.api.nvim_buf_get_name(bufnr)
         local lines = run_cmd_on_buf(bufnr,
         {
             "clang-format",
             "--style={BasedOnStyle: WebKit, IndentWidth: 4}",
-            "--assume-filename", fname,
+            "--assume-filename",
+            fname,
         })
+
         return apply_to_buf(bufnr, universal_post_processor(lines, ft))
     end,
 }
+
+
 -- ── CSS ───────────────────────────────────────────────────────────────────────
 -- prettier does the real, from-scratch reindentation (robust to arbitrarily
 -- messy input); allman_css_rewriter then relocates the "{" onto its own line
@@ -1472,32 +1512,48 @@ conform.formatters.css_allman =
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
+
+        if not bufnr then
+            return {}
+        end
         local lines = run_cmd_on_buf(bufnr,
         {
             "prettier",
-            "--parser", "css",
-            "--tab-width", "4",
+            "--parser",
+            "css",
+            "--tab-width",
+            "4",
         })
         lines = allman_css_rewriter(lines)
+
         return apply_to_buf(bufnr, universal_post_processor(lines, "css"))
     end,
 }
+
+
 conform.formatters.css_standard =
 {
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
+
+        if not bufnr then
+            return {}
+        end
         local lines = run_cmd_on_buf(bufnr,
         {
             "prettier",
-            "--parser", "css",
-            "--tab-width", "4",
+            "--parser",
+            "css",
+            "--tab-width",
+            "4",
         })
+
         return apply_to_buf(bufnr, universal_post_processor(lines, "css"))
     end,
 }
+
+
 -- ── JavaScript / TypeScript ───────────────────────────────────────────────────
 -- prettier does the real, from-scratch reindentation (and line-wrapping,
 -- quote/semicolon normalization, etc. - robust to arbitrarily messy input);
@@ -1509,37 +1565,53 @@ conform.formatters.js_allman =
 {
     inherit = false,
     format = function(_, ctx)
-        local bufnr  = ctx.buf
-        if not bufnr then return {} end
-        local ft     = vim.bo[bufnr].filetype
+        local bufnr = ctx.buf
+
+        if not bufnr then
+            return {}
+        end
+        local ft = vim.bo[bufnr].filetype
         local parser = (ft == "typescript") and "typescript" or "babel"
-        local lines  = run_cmd_on_buf(bufnr,
+        local lines = run_cmd_on_buf(bufnr,
         {
             "prettier",
-            "--parser", parser,
-            "--tab-width", "4",
+            "--parser",
+            parser,
+            "--tab-width",
+            "4",
         })
         lines = js_allman_rewriter(lines)
+
         return apply_to_buf(bufnr, universal_post_processor(lines, ft))
     end,
 }
+
+
 conform.formatters.js_standard =
 {
     inherit = false,
     format = function(_, ctx)
-        local bufnr  = ctx.buf
-        if not bufnr then return {} end
-        local ft     = vim.bo[bufnr].filetype
+        local bufnr = ctx.buf
+
+        if not bufnr then
+            return {}
+        end
+        local ft = vim.bo[bufnr].filetype
         local parser = (ft == "typescript") and "typescript" or "babel"
-        local lines  = run_cmd_on_buf(bufnr,
+        local lines = run_cmd_on_buf(bufnr,
         {
             "prettier",
-            "--parser", parser,
-            "--tab-width", "4",
+            "--parser",
+            parser,
+            "--tab-width",
+            "4",
         })
+
         return apply_to_buf(bufnr, universal_post_processor(lines, ft))
     end,
 }
+
+
 -- ── Lua ───────────────────────────────────────────────────────────────────────
 -- stylua does the real, from-scratch reindentation (robust to arbitrarily
 -- messy input); lua_allman_rewriter then relocates table-literal "{" onto
@@ -1554,36 +1626,54 @@ conform.formatters.lua_allman =
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
+
+        if not bufnr then
+            return {}
+        end
         local lines = run_cmd_on_buf(bufnr,
         {
             "stylua",
-            "--syntax", "LuaJit",
-            "--indent-type", "Spaces",
-            "--indent-width", "4",
+            "--syntax",
+            "LuaJit",
+            "--indent-type",
+            "Spaces",
+            "--indent-width",
+            "4",
             "-",
         })
         lines = lua_allman_rewriter(lines)
+
         return apply_to_buf(bufnr, universal_post_processor(lines, "lua"))
     end,
 }
+
+
 conform.formatters.lua_standard =
 {
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
+
+        if not bufnr then
+            return {}
+        end
         local lines = run_cmd_on_buf(bufnr,
         {
             "stylua",
-            "--syntax", "LuaJit",
-            "--indent-type", "Spaces",
-            "--indent-width", "4",
+            "--syntax",
+            "LuaJit",
+            "--indent-type",
+            "Spaces",
+            "--indent-width",
+            "4",
             "-",
         })
+
         return apply_to_buf(bufnr, universal_post_processor(lines, "lua"))
     end,
 }
+
+
 -- ── Python ────────────────────────────────────────────────────────────────────
 -- black handles PEP 8 spacing; the universal post-processor adds the project-
 -- specific rules (standalone closing bracket blank, dash replacement, etc.).
@@ -1592,32 +1682,53 @@ conform.formatters.python_allman =
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
+
+        if not bufnr then
+            return {}
+        end
         local lines = run_cmd_on_buf(bufnr, { "black", "--quiet", "-" })
+
         return apply_to_buf(bufnr, universal_post_processor(lines, "python"))
     end,
 }
+
+
 conform.formatters.python_standard =
 {
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
+
+        if not bufnr then
+            return {}
+        end
         local lines = run_cmd_on_buf(bufnr, { "black", "--quiet", "-" })
+
         return apply_to_buf(bufnr, universal_post_processor(lines, "python"))
     end,
 }
+
+
 -- ── HTML ──────────────────────────────────────────────────────────────────────
 conform.formatters.html_post =
 {
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
-        if not bufnr then return {} end
+
+        if not bufnr then
+            return {}
+        end
         local lines = run_cmd_on_buf(bufnr,
         {
-            "djlint", "--reformat", "--quiet", "--indent", "4", "-",
+            "djlint",
+            "--reformat",
+            "--quiet",
+            "--indent",
+            "4",
+            "-",
         })
+
         return apply_to_buf(bufnr, universal_post_processor(lines, "html"))
     end,
 }
@@ -1626,34 +1737,34 @@ conform.formatters.html_post =
 -- =============================================================================
 local allman_formatters =
 {
-    python     = { "python_allman" },
-    c          = { "clang_format_allman" },
-    cpp        = { "clang_format_allman" },
-    java       = { "clang_format_allman" },
-    css        = { "css_allman" },
+    python = { "python_allman" },
+    c = { "clang_format_allman" },
+    cpp = { "clang_format_allman" },
+    java = { "clang_format_allman" },
+    css = { "css_allman" },
     javascript = { "js_allman" },
     typescript = { "js_allman" },
-    lua        = { "lua_allman" },
-    html       = { "html_post" },
+    lua = { "lua_allman" },
+    html = { "html_post" },
 }
 local standard_formatters =
 {
-    python     = { "python_standard" },
-    c          = { "clang_format_standard" },
-    cpp        = { "clang_format_standard" },
-    java       = { "clang_format_standard" },
-    css        = { "css_standard" },
+    python = { "python_standard" },
+    c = { "clang_format_standard" },
+    cpp = { "clang_format_standard" },
+    java = { "clang_format_standard" },
+    css = { "css_standard" },
     javascript = { "js_standard" },
     typescript = { "js_standard" },
-    lua        = { "lua_standard" },
-    html       = { "html_post" },
+    lua = { "lua_standard" },
+    html = { "html_post" },
 }
 conform.setup({ formatters_by_ft = allman_formatters })
 -- =============================================================================
 -- Keybinds
 -- =============================================================================
 vim.keymap.set("n", "<C-f>", function()
-    local ft   = vim.bo.filetype
+    local ft = vim.bo.filetype
     local fmts = allman_formatters[ft]
     if not fmts then
         vim.notify("No formatter configured for " .. ft, vim.log.levels.WARN)
@@ -1662,7 +1773,7 @@ vim.keymap.set("n", "<C-f>", function()
     conform.format({ formatters = fmts, async = true })
 end, { noremap = true, silent = true, desc = "Format (Allman)" })
 vim.keymap.set("n", "<C-S-f>", function()
-    local ft   = vim.bo.filetype
+    local ft = vim.bo.filetype
     local fmts = standard_formatters[ft]
     if not fmts then
         vim.notify("No formatter configured for " .. ft, vim.log.levels.WARN)
@@ -1670,3 +1781,4 @@ vim.keymap.set("n", "<C-S-f>", function()
     end
     conform.format({ formatters = fmts, async = true })
 end, { noremap = true, silent = true, desc = "Format (standard / K&R)" })
+

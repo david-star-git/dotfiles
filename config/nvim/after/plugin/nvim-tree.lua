@@ -7,7 +7,7 @@
 --
 -- Keybind: <leader>e toggles the explorer.
 -- =============================================================================
--- Disable netrw before nvim-tree loads — if netrw loads first it conflicts.
+-- Disable netrw before nvim-tree loads - if netrw loads first it conflicts.
 
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1

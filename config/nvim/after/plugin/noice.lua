@@ -58,7 +58,7 @@ require("noice").setup(
             throttle = 1000 / 30, -- update at 30fps max
             view = "mini",
         },
-        -- Don't override markdown rendering — let the LSP handle it directly.
+        -- Don't override markdown rendering - let the LSP handle it directly.
         override =
         {
             ["vim.lsp.util.convert_input_to_markdown_lines"] = false,
@@ -73,7 +73,7 @@ require("noice").setup(
             view = nil,
             opts = {},
         },
-        -- Signature help — shown automatically when typing function arguments.
+        -- Signature help - shown automatically when typing function arguments.
         signature =
         {
             enabled = true,

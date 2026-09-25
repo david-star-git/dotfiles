@@ -4,9 +4,9 @@
 -- runner, then sets all editor options.
 -- =============================================================================
 
-require("star.remap")   -- keybindings (see remap.lua)
-require("star.packer")  -- plugin declarations (see packer.lua)
-require("star.runner")  -- file runner keybinds (see runner.lua)
+require("star.packer") -- plugin declarations (see packer.lua)
+require("star.remap") -- keybindings (see remap.lua)
+require("star.runner") -- file runner keybinds (see runner.lua)
 
 -- ── Colors ────────────────────────────────────────────────────────────────────
 -- Enable 24-bit RGB color. Required for Catppuccin and most modern themes.
@@ -38,10 +38,10 @@ vim.opt.smartindent = true
 -- tab arrows and trailing spaces when debugging indentation issues.
 vim.opt.list = false
 -- vim.opt.listchars = { tab = "▸ ", trail = "·" }
-
 -- ── Filetype overrides ────────────────────────────────────────────────────────
--- Makefiles require real tabs — expandtab must be off or make will fail.
-vim.api.nvim_create_autocmd("FileType", {
+-- Makefiles require real tabs - expandtab must be off or make will fail.
+vim.api.nvim_create_autocmd("FileType",
+{
     pattern = "make",
     callback = function()
         vim.opt_local.expandtab = false
@@ -51,7 +51,8 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- Lua uses 4-space indentation (explicit to override any plugin defaults).
-vim.api.nvim_create_autocmd("FileType", {
+vim.api.nvim_create_autocmd("FileType",
+{
     pattern = "lua",
     callback = function()
         vim.opt_local.tabstop = 4
@@ -63,7 +64,7 @@ vim.api.nvim_create_autocmd("FileType", {
 -- ── Format keybind ────────────────────────────────────────────────────────────
 -- Ctrl+f: format the buffer. Uses LSP formatting if a server is attached,
 -- falls back to gg=G (vim's built-in re-indent) otherwise.
--- Note: conform.lua also binds Ctrl+f — conform takes precedence when loaded.
+-- Note: conform.lua also binds Ctrl+f - conform takes precedence when loaded.
 vim.keymap.set("n", "<C-f>", function()
     local clients = vim.lsp.get_clients({ bufnr = 0 })
     if #clients > 0 then
@@ -95,3 +96,4 @@ vim.cmd([[hi NvimTreeNormal guibg=NONE]])
 vim.cmd([[hi NvimTreeEndOfBuffer guibg=NONE]])
 vim.cmd([[hi LualineNormal guibg=NONE]])
 vim.cmd([[hi LualineInactive guibg=NONE]])
+

@@ -16,7 +16,7 @@ vim.keymap.set("n", "<leader> ", builtin.find_files, { desc = "Telescope find fi
 -- Find files tracked by git (respects .gitignore)
 vim.keymap.set("n", "<leader>g", builtin.git_files, { desc = "Telescope git files" })
 
--- Live grep — prompts for a search string then shows all matches
+-- Live grep - prompts for a search string then shows all matches
 vim.keymap.set("n", "<leader>f", function()
     builtin.grep_string({ search = vim.fn.input("Grep > ") })
     -- Load the noice extension here so :Noice history is telescope-searchable

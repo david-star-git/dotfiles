@@ -8,11 +8,11 @@
 -- Scope highlighting uses treesitter to highlight the current code block's
 -- indent guide in a distinct color.
 -- =============================================================================
--- Initial setup (minimal — options set below)
+-- Initial setup (minimal - options set below)
 
 require("ibl").setup()
 
--- Rainbow color cycle — one highlight group per indent level.
+-- Rainbow color cycle - one highlight group per indent level.
 -- Colors are from One Dark / a neutral palette that reads well on dark themes.
 local highlight =
 {

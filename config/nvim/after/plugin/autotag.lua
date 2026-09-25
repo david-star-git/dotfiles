@@ -10,8 +10,8 @@ require("nvim-ts-autotag").setup(
 {
     opts =
     {
-        enable_close = true,     -- auto-close opening tags: <div| → <div></div>
-        enable_rename = true,    -- renaming <div> also renames </div>
+        enable_close = true, -- auto-close opening tags: <div| → <div></div>
+        enable_rename = true, -- renaming <div> also renames </div>
         enable_close_on_slash = false, -- don't auto-close on </  (let treesitter handle it)
     },
 })
