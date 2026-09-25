@@ -1,206 +1,362 @@
 -- =============================================================================
--- lua/star/runner.lua - file runner
+-- lua/star/runner.lua - project command runner
 --
--- <leader>r - run the current file in a background tmux window.
--- <leader>R - start a Flask dev server for the current project.
+-- Project commands are defined in a `.nvim` file at the project root:
 --
--- Each filetype gets its own runner function. The runner opens a detached tmux
--- window (named by language) so the output stays visible and nvim is unblocked.
--- The window keeps a shell open after the program exits so you can read output.
+--     run = python3 main.py
+--     dev = python3 -m flask run --debug
+--     test = pytest
 --
--- Adding a new runner:
---   1. Add a function to the `runners` table keyed by file extension.
---   2. Call tmux() with the command and a window name.
+-- Keymaps:
+--     <leader>rr  run
+--     <leader>rd  dev
+--     <leader>rt  test
+--
+-- If `.nvim` exists, it is always preferred.
+--
+-- Without `.nvim`, a small built-in fallback is available for:
+--     Python, C, C++
+--
+-- Commands are executed inside a detached tmux window and the shell remains
+-- open after the command exits so output can be inspected.
 -- =============================================================================
-
+--
 -- ── Config ────────────────────────────────────────────────────────────────────
-local TMUX_SHELL = "zsh"    -- shell to keep open after the runner exits
-local HTML_PORT  = 8080     -- port used by the static HTTP server for HTML/CSS
-local TMP_DIR    = "/tmp/nvim-run"  -- scratch directory for compiled binaries
+
+local TMUX_SHELL = "zsh"
+local TMP_DIR = "/tmp/nvim-run"
 
 -- ── Helpers ───────────────────────────────────────────────────────────────────
 
--- notify: wrapper around vim.notify with a "Runner" title for consistent toasts.
-notify = function(msg, level)
-    vim.notify(msg, level or vim.log.levels.INFO, { title = "Runner" })
+local function notify(msg, level)
+    vim.notify(msg, level or vim.log.levels.INFO, {
+        title = "Runner",
+    })
 end
 
--- tmux: open a detached tmux window that runs `cmd`, then drops into the shell.
--- `name` is the window title shown in the tmux tab bar.
+
+---Run a command inside a detached tmux window.
+---@param cmd string
+---@param name string
 local function tmux(cmd, name)
     name = name or "runner"
-    os.execute(
-        "tmux new-window -d -n "
-        .. vim.fn.shellescape(name)
-        .. " '"
-        .. cmd
-        .. "; exec "
-        .. TMUX_SHELL
-        .. " -i'"
+
+    local shell_cmd = string.format(
+        "tmux new-window -d -n %s %s",
+        vim.fn.shellescape(name),
+        vim.fn.shellescape(cmd .. "; exec " .. TMUX_SHELL .. " -i")
     )
+
+    os.execute(shell_cmd)
 end
 
--- find_html_entry: locate the HTML file to open for CSS/asset previews.
--- Resolution order:
---   1. index.html in the project root
---   2. <basename>.html matching the current file (style.css → style.html)
---   3. first .html file found in the directory
-local function find_html_entry(cwd, file)
-    local index = cwd .. "/index.html"
-    if vim.fn.filereadable(index) == 1 then
-        notify("Using index.html", vim.log.levels.INFO)
-        return "index.html"
+
+---Find a file by walking upward from `start`.
+---@param start string
+---@param filename string
+---@return string|nil
+local function find_upward(start, filename)
+    local dir = vim.fn.fnamemodify(start, ":p")
+
+    if vim.fn.isdirectory(dir) == 0 then
+        dir = vim.fn.fnamemodify(dir, ":h")
     end
 
-    local base = vim.fn.fnamemodify(file, ":t:r")
-    local candidate = cwd .. "/" .. base .. ".html"
-    if vim.fn.filereadable(candidate) == 1 then
-        notify("Using matching HTML: " .. base .. ".html", vim.log.levels.INFO)
-        return base .. ".html"
-    end
+    while true do
+        local candidate = dir .. "/" .. filename
 
-    local htmls = vim.fn.glob(cwd .. "/*.html", false, true)
-    if #htmls > 0 then
-        local chosen = vim.fn.fnamemodify(htmls[1], ":t")
-        notify("Using first HTML found: " .. chosen, vim.log.levels.WARN)
-        return chosen
+        if vim.fn.filereadable(candidate) == 1 then
+            return candidate
+        end
+
+        local parent = vim.fn.fnamemodify(dir, ":h")
+
+        if parent == dir then
+            break
+        end
+
+        dir = parent
     end
 
     return nil
 end
 
--- run_static_server: kill any process on HTML_PORT, then start Python's
--- built-in HTTP server and open the browser at the given page.
-local function run_static_server(cwd, page)
-    notify("Starting static server on port " .. HTML_PORT, vim.log.levels.INFO)
-    tmux(
-        "cd " .. cwd
-        .. " && lsof -ti tcp:" .. HTML_PORT .. " | xargs -r kill -9"
-        .. " && (sleep 0.5 && xdg-open http://localhost:" .. HTML_PORT .. "/" .. page .. ") &"
-        .. " python3 -m http.server " .. HTML_PORT,
-        "html"
-    )
-end
 
--- is_flask_project: heuristic detection for Flask projects.
--- Returns true if app.py, wsgi.py, or "flask" in requirements.txt is found.
-local function is_flask_project(cwd)
-    if vim.fn.filereadable(cwd .. "/app.py") == 1 then return true end
-    if vim.fn.filereadable(cwd .. "/wsgi.py") == 1 then return true end
+---Find the project root.
+---
+---If `.nvim` exists somewhere above the current file, that directory is the
+---project root. Otherwise fall back to the current working directory.
+---@return string
+local function project_root()
+    local file = vim.fn.expand("%:p")
 
-    local req = cwd .. "/requirements.txt"
-    if vim.fn.filereadable(req) == 1 then
-        for _, line in ipairs(vim.fn.readfile(req)) do
-            if line:lower():match("flask") then return true end
+    if file ~= "" then
+        local nvim_file = find_upward(file, ".nvim")
+
+        if nvim_file then
+            return vim.fn.fnamemodify(nvim_file, ":h")
         end
     end
 
-    return false
+    local cwd = vim.fn.getcwd()
+    local nvim_file = find_upward(cwd, ".nvim")
+
+    if nvim_file then
+        return vim.fn.fnamemodify(nvim_file, ":h")
+    end
+
+    return cwd
 end
 
--- run_flask: activate the project venv and start Flask with debug/auto-reload.
-local function run_flask(cwd)
-    local venv = cwd .. "/venv"
-    if vim.fn.isdirectory(venv) == 0 then
-        notify("No venv found — cannot run Flask.", vim.log.levels.ERROR)
+
+---Read project commands from `.nvim`.
+---
+---Supported syntax:
+---
+---    run = command
+---    dev = command
+---    test = command
+---
+---Blank lines and lines beginning with `#` are ignored.
+---
+---@param path string
+---@return table<string, string>
+local function read_nvim_file(path)
+    local commands = {}
+
+    for _, line in ipairs(vim.fn.readfile(path)) do
+        line = vim.trim(line)
+
+        if line ~= "" and not line:match("^#") then
+            local name, command = line:match("^([%w_-]+)%s*=%s*(.-)%s*$")
+
+            if name and command and command ~= "" then
+                commands[name] = command
+            end
+        end
+    end
+
+    return commands
+end
+
+
+---Load `.nvim` commands for the current project.
+---@return table<string, string>|nil
+local function load_project_commands()
+    local root = project_root()
+    local path = root .. "/.nvim"
+
+    if vim.fn.filereadable(path) == 0 then
+        return nil
+    end
+
+    return read_nvim_file(path)
+end
+
+
+---Run a named command from `.nvim`.
+---@param name string
+local function run_project_command(name)
+    local root = project_root()
+    local path = root .. "/.nvim"
+
+    if vim.fn.filereadable(path) == 0 then
+        return false
+    end
+
+    local commands = read_nvim_file(path)
+    local command = commands[name]
+
+    if not command then
+        notify(".nvim has no '" .. name .. "' command.", vim.log.levels.WARN)
+        return true
+    end
+
+    notify("Running " .. name .. ": " .. command)
+
+    tmux(
+        "cd " .. vim.fn.shellescape(root) .. " && " .. command,
+        "nvim-" .. name
+    )
+
+    return true
+end
+
+
+-- ── Built-in fallback runners ─────────────────────────────────────────────────
+--
+-- These are deliberately limited to languages where the basic command is
+-- predictable. For everything else, create a `.nvim` file.
+
+local function fallback_run()
+    local file = vim.fn.expand("%:p")
+    local ext = vim.fn.expand("%:e")
+    local cwd = vim.fn.getcwd()
+
+    vim.fn.mkdir(TMP_DIR, "p")
+
+    if ext == "py" then
+        local venv = cwd .. "/venv"
+
+        if vim.fn.isdirectory(venv) == 0 then
+            notify("No venv found - creating one…", vim.log.levels.WARN)
+
+            local result = vim.fn.system({
+                "python3",
+                "-m",
+                "venv",
+                venv,
+            })
+
+            if vim.v.shell_error ~= 0 then
+                notify(
+                    "Failed to create Python venv: " .. result,
+                    vim.log.levels.ERROR
+                )
+
+                return
+            end
+        end
+
+        notify("Running Python file")
+
+        tmux(
+            "cd "
+                .. vim.fn.shellescape(cwd)
+                .. " && source "
+                .. vim.fn.shellescape(venv .. "/bin/activate")
+                .. " && python3 "
+                .. vim.fn.shellescape(file),
+            "python"
+        )
+
         return
     end
-    notify("Starting Flask dev server (auto-reload enabled)", vim.log.levels.INFO)
-    tmux(
-        "cd " .. cwd
-        .. " && source " .. venv .. "/bin/activate"
-        .. " && export FLASK_DEBUG=1"
-        .. " && flask run --debug --reload --host=0.0.0.0 --port=5000",
-        "flask"
+
+    if ext == "c" then
+        local output = TMP_DIR .. "/c-run"
+
+        notify("Compiling & running C program")
+
+        tmux(
+            "gcc "
+                .. vim.fn.shellescape(file)
+                .. " -o "
+                .. vim.fn.shellescape(output)
+                .. " && "
+                .. vim.fn.shellescape(output),
+            "c-run"
+        )
+
+        return
+    end
+
+    if ext == "cpp" or ext == "cc" or ext == "cxx" then
+        local output = TMP_DIR .. "/cpp-run"
+
+        notify("Compiling & running C++ program")
+
+        tmux(
+            "g++ "
+                .. vim.fn.shellescape(file)
+                .. " -std=c++20 -O2 -o "
+                .. vim.fn.shellescape(output)
+                .. " && "
+                .. vim.fn.shellescape(output),
+            "cpp-run"
+        )
+
+        return
+    end
+
+    notify(
+        "No .nvim file and no fallback runner for ." .. ext,
+        vim.log.levels.WARN
     )
 end
 
--- ── Runner keybind ────────────────────────────────────────────────────────────
--- <leader>r — detect the current file's extension and call the matching runner.
-vim.keymap.set("n", "<leader>r", function()
-    local file = vim.fn.expand("%:p")
-    local ext  = vim.fn.expand("%:e")
-    local cwd  = vim.fn.getcwd()
 
-    os.execute("mkdir -p " .. TMP_DIR)
-
-    local runners = {}
-
-    -- Python: create a venv if one doesn't exist, activate, then run.
-    runners.py = function()
-        local venv = cwd .. "/venv"
-        if vim.fn.isdirectory(venv) == 0 then
-            notify("No venv found — creating one…", vim.log.levels.WARN)
-            os.execute("python3 -m venv " .. venv)
-        end
-        notify("Running Python file", vim.log.levels.INFO)
-        tmux("source " .. venv .. "/bin/activate && python3 " .. file, "python")
+---Run a command.
+---
+---`.nvim` takes priority. If it does not exist, use the fallback runner.
+---@param name string
+local function run(name)
+    if run_project_command(name) then
+        return
     end
 
-    -- JavaScript: run with Node.
-    runners.js = function()
-        notify("Running JavaScript file", vim.log.levels.INFO)
-        tmux("node " .. file, "node")
+    if name == "run" then
+        fallback_run()
+        return
     end
 
-    -- Lua: run directly with the lua interpreter.
-    runners.lua = function()
-        notify("Running Lua file", vim.log.levels.INFO)
-        tmux("lua " .. file, "lua")
+    notify(
+        "No .nvim file - '" .. name .. "' has no fallback.",
+        vim.log.levels.WARN
+    )
+end
+
+
+-- ── Keymaps ───────────────────────────────────────────────────────────────────
+
+-- <leader>rr - run
+vim.keymap.set("n", "<leader>rr", function()
+    run("run")
+end, {
+    silent = true,
+    desc = "Run project",
+})
+
+
+-- <leader>rd - dev
+vim.keymap.set("n", "<leader>rd", function()
+    run("dev")
+end, {
+    silent = true,
+    desc = "Run dev command",
+})
+
+
+-- <leader>rt - test
+vim.keymap.set("n", "<leader>rt", function()
+    run("test")
+end, {
+    silent = true,
+    desc = "Run tests",
+})
+
+-- <leader>rc - create a .nvim project file
+vim.keymap.set("n", "<leader>rc", function()
+    local root = project_root()
+    local path = root .. "/.nvim"
+
+    if vim.fn.filereadable(path) == 1 then
+        notify(".nvim already exists.", vim.log.levels.WARN)
+        return
     end
 
-    -- C: compile with gcc, run the output binary.
-    runners.c = function()
-        notify("Compiling & running C program", vim.log.levels.INFO)
-        tmux("gcc " .. file .. " -o " .. TMP_DIR .. "/a.out && " .. TMP_DIR .. "/a.out", "c-run")
-    end
+    local template = {
+        "# Neovim project commands",
+        "# Commands are executed from the project root.",
+        "#",
+        "# Available keymaps:",
+        "#   <leader>rr  -> run",
+        "#   <leader>rd  -> dev",
+        "#   <leader>rt  -> test",
+        "",
+        "run =",
+        "dev =",
+        "test =",
+        "",
+    }
 
-    -- C++: compile with g++ (C++20, O2 optimisation), run the output binary.
-    runners.cpp = function()
-        notify("Compiling & running C++ program", vim.log.levels.INFO)
-        tmux("g++ " .. file .. " -std=c++20 -O2 -o " .. TMP_DIR .. "/a.out && " .. TMP_DIR .. "/a.out", "cpp-run")
-    end
+    vim.fn.writefile(template, path)
 
-    -- HTML: start a static server and open the browser at the current file.
-    runners.html = function()
-        run_static_server(cwd, vim.fn.fnamemodify(file, ":t"))
-    end
+    notify("Created .nvim")
 
-    -- CSS: find the associated HTML file and open a static server for it.
-    runners.css = function()
-        local page = find_html_entry(cwd, file)
-        if not page then
-            notify("No HTML file found to preview CSS.", vim.log.levels.ERROR)
-            return
-        end
-        run_static_server(cwd, page)
-    end
+    vim.cmd.edit(vim.fn.fnameescape(path))
+end, {
+    silent = true,
+    desc = "Create project .nvim",
+})
 
-    -- Markdown: convert to HTML with pandoc and open in the browser.
-    runners.md = function()
-        notify("Rendering Markdown preview", vim.log.levels.INFO)
-        tmux(
-            "pandoc " .. file .. " -o " .. TMP_DIR .. "/preview.html"
-            .. " && xdg-open " .. TMP_DIR .. "/preview.html",
-            "markdown"
-        )
-    end
-
-    local run = runners[ext]
-    if run then
-        run()
-    else
-        notify("No runner configured for ." .. ext, vim.log.levels.WARN)
-    end
-end, { silent = true })
-
--- ── Flask keybind ─────────────────────────────────────────────────────────────
--- <leader>R — detect Flask project and start the dev server.
-vim.keymap.set("n", "<leader>R", function()
-    local cwd = vim.fn.getcwd()
-    if is_flask_project(cwd) then
-        run_flask(cwd)
-    else
-        notify("No Flask project detected.", vim.log.levels.WARN)
-    end
-end, { silent = true })
