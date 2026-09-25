@@ -6,15 +6,26 @@
 --   Ctrl+Shift+F - Standard K&R style (opening brace on same line)
 --
 -- Supported languages and their formatters:
---   lua, javascript, typescript, css        - pure Lua post-processor
+--   lua                                     - stylua + post-processor
+--   javascript, typescript                  - prettier + post-processor
+--   css                                     - prettier + post-processor
 --   python                                  - black + post-processor
 --   c, cpp, java                            - clang-format + post-processor
 --   html                                    - djlint + post-processor
+--
+-- Every language above is reindented from scratch by a real external
+-- formatter first (so a file is fully reformatted no matter how cursed its
+-- existing indentation is), then - for lua/js/ts/css only - a small Lua
+-- rewriter relocates the opening "{" onto its own line for the Allman
+-- variant, and finally every language passes through the same universal
+-- post-processor below. Required external tools: stylua, prettier,
+-- clang-format, black, djlint.
 --
 -- Universal post-processor passes (in order):
 --   0.  Em dash and en dash replaced with hyphen-minus (-)
 --   1.  Tabs expanded to 4 spaces, trailing whitespace trimmed, CR stripped
 --   2.  Imports sorted alphabetically within each blank-line-separated group
+--   3a. HTML tag attributes sorted alphabetically and stacked vertically
 --   3.  HTML class attributes sorted alphabetically and stacked vertically
 --   4.  Blank-line spacing rules (see detailed notes in the function body)
 --   4b. Header comment: exactly one blank line after the opening comment block
@@ -30,7 +41,9 @@
 -- What is NEVER modified:
 --   - Comment text (-- / // / # / /* */ / <!-- -->)
 --   - Multi-line string / docstring content (""" / ''' / [[ ]])
---   - Anything inside unclosed brackets ( [ {
+--   - Anything inside an unclosed ( or [ (a wrapped call or array literal).
+--     { and } are code-block delimiters, not expression brackets, and are
+--     deliberately NOT tracked here - see count_net_brackets below for why.
 -- =============================================================================
 
 local conform = require("conform")
@@ -39,15 +52,51 @@ local conform = require("conform")
 -- =============================================================================
 -- Low-level helpers
 -- =============================================================================
+-- split_lines: split a shell command's stdout into a table of lines,
+-- preserving blank lines (an empty line is a real, meaningful line - it must
+-- not just vanish). Returns {} for a truly empty string so callers can tell
+-- "the tool produced nothing" apart from "the tool produced one blank line".
+local function split_lines(text)
+    if text == "" then return {} end
+
+    local out    = {}
+    local normalized = text:gsub("\r\n", "\n"):gsub("\r", "\n")
+
+    for s in (normalized .. "\n"):gmatch("(.-)\n") do
+        table.insert(out, s)
+    end
+
+    return out
+end
+
+
 -- run_cmd_on_buf: pipe the buffer through an external shell command and return
 -- the result as a table of lines. Falls back to the original lines on failure.
 local function run_cmd_on_buf(bufnr, cmd_parts)
     local lines   = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
     local content = table.concat(lines, "\n")
 
+    -- Every argument is shell-escaped individually here so callers never
+    -- have to (and never have to worry about it). Without this, any arg
+    -- containing spaces - e.g. a clang-format --style="{...}" spec - gets
+    -- word-split by the shell into several bogus arguments instead of
+    -- staying one.
+    local escaped_parts = {}
+
+    for _, part in ipairs(cmd_parts) do
+        table.insert(escaped_parts, vim.fn.shellescape(part))
+    end
+
+    -- `printf '%s'` rather than `echo`: /bin/sh's echo builtin (dash, on
+    -- Ubuntu/Debian) interprets backslash escapes by default, so any source
+    -- line containing \n, \t, \\, etc. inside a string literal - i.e. almost
+    -- any real C/Python/JS/Lua file - would get silently mangled (a real "\n"
+    -- turned into an actual newline) before the formatter ever saw it.
+    -- printf's %s argument is never escape-processed, so content survives
+    -- byte-for-byte.
     local handle = io.popen(
-        "echo " .. vim.fn.shellescape(content)
-        .. " | " .. table.concat(cmd_parts, " ")
+        "printf '%s\\n' " .. vim.fn.shellescape(content)
+        .. " | " .. table.concat(escaped_parts, " ")
     )
 
     if not handle then
@@ -57,11 +106,7 @@ local function run_cmd_on_buf(bufnr, cmd_parts)
     local result = handle:read("*a")
     handle:close()
 
-    local out = {}
-
-    for s in result:gmatch("[^\r\n]+") do
-        table.insert(out, s)
-    end
+    local out = split_lines(result)
 
     return #out > 0 and out or lines
 end
@@ -123,6 +168,22 @@ local function is_top_level_def(line, lang)
     if lang == "lua" then
         return t:match("^function%s") ~= nil
             or t:match("^local%s+function%s") ~= nil
+            -- A top-level dotted-name assignment whose value is clearly a
+            -- substantial definition - a function, a table literal on the
+            -- same line, or a bare trailing "=" whose value continues on the
+            -- next line (this file's own own style: "name =" then "{" on the
+            -- line after) - such as this file's own
+            -- conform.formatters.css_standard = { ... } blocks. Deliberately
+            -- narrower than "any dotted assignment": a plain one-liner
+            -- setting like  vim.opt.number = true  has a real scalar value
+            -- immediately after "=" on the same line, so it matches none of
+            -- these three shapes and is left alone - forcing 2 blank lines
+            -- between every vim.opt.x = y / vim.g.x = y line in an ordinary
+            -- init.lua would be exactly the unwanted churn this file exists
+            -- to avoid.
+            or t:match("^[%w_][%w_]*%.[%w_%.]+%s*=%s*function%f[%A]") ~= nil
+            or t:match("^[%w_][%w_]*%.[%w_%.]+%s*=%s*{%s*$") ~= nil
+            or t:match("^[%w_][%w_]*%.[%w_%.]+%s*=%s*$") ~= nil
     end
 
     if lang == "javascript" or lang == "typescript" then
@@ -151,7 +212,15 @@ local function is_top_level_def(line, lang)
             and not t:match("^for%s*%(")
             and not t:match("^switch%s*%(")
             and not t:match("^return")
+            and not t:match(";%s*$")   -- forward declarations / calls, not defs
+            and not t:match(",%s*$")   -- multi-line call continuation
 
+    end
+
+    if lang == "java" then
+        return t:match("^[%w%s]-class%s+%a") ~= nil
+            or t:match("^[%w%s]-interface%s+%a") ~= nil
+            or t:match("^[%w%s]-enum%s+%a") ~= nil
     end
 
     return false
@@ -175,12 +244,34 @@ local function is_method_def(line, lang)
         return t:match("^function%s") ~= nil
             or t:match("^async%s+function%s") ~= nil
             or t:match("^const%s+%w+%s*=.*=>") ~= nil
-            or t:match("^%w+%s*%(.*%)%s*{?$") ~= nil
+            or (t:match("^%w+%s*%(.*%)%s*{?$") ~= nil
+                and not t:match("^if%s*%(")
+                and not t:match("^while%s*%(")
+                and not t:match("^for%s*%(")
+                and not t:match("^switch%s*%(")
+                and not t:match("^catch%s*%("))
     end
 
     if lang == "python" then
         return t:match("^def%s") ~= nil
             or t:match("^async%s+def%s") ~= nil
+    end
+
+    if lang == "c" or lang == "cpp" or lang == "java" then
+        -- Same signature shape as the top-level c/cpp check, plus the
+        -- exclusions that matter far more here: at indent > 0 this pattern
+        -- would otherwise match nearly every plain function CALL too
+        -- ("doSomething(x, y);"), since a call and a definition look
+        -- identical minus the trailing ";" / "," and the body brace.
+        return t:match("^[%w_][%w_%s%*&:<>%[%]]+%(") ~= nil
+            and not t:match("^if%s*%(")
+            and not t:match("^while%s*%(")
+            and not t:match("^for%s*%(")
+            and not t:match("^switch%s*%(")
+            and not t:match("^return")
+            and not t:match("^new%s")
+            and not t:match(";%s*$")
+            and not t:match(",%s*$")
     end
 
     return false
@@ -208,6 +299,10 @@ local function is_import(line, lang)
 
     if lang == "c" or lang == "cpp" then
         return t:match("^#include") ~= nil
+    end
+
+    if lang == "java" then
+        return t:match("^import%s") ~= nil
     end
 
     return false
@@ -257,9 +352,11 @@ local function is_block_opener(line, lang)
         return t:match(":$") ~= nil
     end
 
-    if lang == "c" or lang == "cpp" then
+    if lang == "c" or lang == "cpp" or lang == "java" then
         return t == "{" or t:match("{$") ~= nil
             or t:match("^}%s*else") ~= nil
+            or t:match("^}%s*catch") ~= nil
+            or t:match("^}%s*finally") ~= nil
     end
 
     return false
@@ -286,17 +383,56 @@ end
 
 
 -- count_net_brackets: how much this line changes bracket nesting depth.
--- Strips string literals first to avoid false positives from brackets in strings.
+-- Scans past string literals (so brackets inside them are never counted) with
+-- a real character-by-character scanner - a previous version stripped strings
+-- with a naive `"[^"]*"` / `'[^']*'` gsub, which breaks the instant a line
+-- has a quote character embedded inside the OTHER quote type (e.g. a Lua
+-- string literal containing `'"'`) - the regex has no notion of which quote
+-- started a string, so it happily pairs up unrelated quote characters across
+-- string boundaries and can strip (or fail to strip) real code along with
+-- it. That's not a hypothetical: this exact file's own count_net_brackets
+-- definition, a few lines below, contains lines shaped exactly like that,
+-- and running this formatter on itself produced a permanently-stuck nonzero
+-- bracket_depth for the rest of the file as a result.
+--
+-- Only ( and [ are tracked here - they mark an expression (a call, an
+-- argument list, an array literal) that can wrap across several lines, and
+-- while one is left open we want to suspend all blank-line insertion so a
+-- wrapped argument list doesn't get split up.
+--
+-- { and } are CODE BLOCK delimiters (function bodies, class bodies,
+-- if-blocks...), not expression brackets, and must NOT be counted here: an
+-- Allman-style opening brace sits alone on its own line, so counting it
+-- would push bracket_depth above zero for the rest of the block and never
+-- bring it back down until the block's closing brace - permanently
+-- disabling every bracket_depth == 0 gated rule (including the blank line
+-- between methods this file exists to add) for everything inside.
 local function count_net_brackets(line)
-    local s = line
-        :gsub('"[^"]*"', "")
-        :gsub("'[^']*'", "")
-        :gsub("%[%[.-%]%]", "")
+    local net       = 0
+    local in_string = nil   -- nil, or the quote character we're inside
+    local i, n      = 1, #line
 
-    local open  = select(2, s:gsub("[%(%[{]", ""))
-    local close = select(2, s:gsub("[%)%]}]", ""))
+    while i <= n do
+        local c = line:sub(i, i)
 
-    return open - close
+        if in_string then
+            if c == "\\" then
+                i = i + 1   -- skip the escaped character, whatever it is
+            elseif c == in_string then
+                in_string = nil
+            end
+        elseif c == '"' or c == "'" then
+            in_string = c
+        elseif c == "(" or c == "[" then
+            net = net + 1
+        elseif c == ")" or c == "]" then
+            net = net - 1
+        end
+
+        i = i + 1
+    end
+
+    return net
 end
 
 -- =============================================================================
@@ -399,7 +535,12 @@ end
 -- HTML class sorting
 -- =============================================================================
 -- Finds  class="…"  attributes, sorts the class names alphabetically, and
--- stacks them vertically - one class per line - aligned to the opening quote.
+-- stacks them vertically - one class per line, indented one step under
+-- whatever line the class attribute itself landed on. Uses the same fixed
+-- indent-step convention as sort_html_attributes (and everything else in this
+-- file) rather than aligning to the opening quote's column - column
+-- alignment silently breaks the moment the content before it changes length,
+-- which is exactly the kind of fragile whitespace this file exists to avoid.
 local function sort_html_classes(lines)
     local out = {}
 
@@ -420,16 +561,164 @@ local function sort_html_classes(lines)
             if #cls_list <= 1 then
                 table.insert(out, line)
             else
-                local align = string.rep(" ", #prefix + #'class="')
+                local this_indent = prefix:match("^(%s*)")
+                local step        = this_indent .. "    "
                 table.insert(out, prefix .. 'class="' .. cls_list[1])
 
                 for j = 2, #cls_list - 1 do
-                    table.insert(out, align .. cls_list[j])
+                    table.insert(out, step .. cls_list[j])
                 end
 
-                table.insert(out, align .. cls_list[#cls_list] .. '"' .. suffix)
+                table.insert(out, step .. cls_list[#cls_list] .. '"' .. suffix)
             end
         else
+            table.insert(out, line)
+        end
+    end
+
+    return out
+end
+
+
+-- sort_html_attributes: for an opening tag with 2+ attributes sitting on a
+-- single line, sort the attributes alphabetically by name and stack them one
+-- per line, indented one step under the tag - e.g.
+--   <h1 tag1="" tag2="" tag3="">
+-- becomes
+--   <h1 tag1=""
+--       tag2=""
+--       tag3="">
+-- A tag with 0 or 1 attributes is left alone (mirrors sort_html_classes'
+-- own "nothing to sort" threshold). A tag whose attributes already span
+-- multiple lines is left alone too - this is a hand-rolled tokenizer, not a
+-- real HTML parser, so it only handles the single-line case (the common
+-- case; djlint only wraps a tag onto multiple lines when it's unusually long).
+local function sort_html_attributes(lines)
+    local out = {}
+
+    for _, line in ipairs(lines) do
+        local indent, after_indent = line:match("^(%s*)(.*)$")
+        local tag, rest = after_indent:match("^<([%a][%w%-]*)(.*)$")
+        local reflowed = false
+
+        if tag then
+            -- Scan for this tag's own closing ">", respecting quoted attribute
+            -- values (which may themselves contain > or <) and bailing out if
+            -- we hit an unescaped "<" first - that means this isn't a simple
+            -- single-line tag and we leave it untouched.
+            local n, in_quote, close_pos = #rest, nil, nil
+
+            for i = 1, n do
+                local c = rest:sub(i, i)
+
+                if in_quote then
+                    if c == in_quote then in_quote = nil end
+                elseif c == '"' or c == "'" then
+                    in_quote = c
+                elseif c == ">" then
+                    close_pos = i
+                    break
+                elseif c == "<" then
+                    break
+                end
+            end
+
+            if close_pos then
+                local inner    = rest:sub(1, close_pos - 1)
+                local trailing = rest:sub(close_pos + 1)
+                local self_closing = inner:match("/%s*$") ~= nil
+
+                if self_closing then
+                    inner = inner:gsub("/%s*$", "")
+                end
+
+                -- Tokenize inner into individual attribute strings. Quote
+                -- style is normalized to double quotes here (single -> double)
+                -- UNLESS the value itself contains a literal double quote, in
+                -- which case it's left exactly as authored rather than risk
+                -- producing an unescaped " inside the value - HTML attribute
+                -- values have no backslash-escape for quotes, so that's the
+                -- one case where touching it could actually corrupt the markup.
+                local attrs, j, m, ok = {}, 1, #inner, true
+
+                while j <= m do
+                    local ws_e = inner:find("[^%s]", j)
+
+                    if not ws_e then break end
+
+                    j = ws_e
+
+                    local name_s, name_e = inner:find("^[%w%-:%.]+", j)
+
+                    if not name_s then ok = false break end
+
+                    local name = inner:sub(name_s, name_e)
+                    local k    = name_e + 1
+                    local eq_e = inner:match("^%s*=%s*()", k)
+
+                    if eq_e then
+                        local qchar = inner:sub(eq_e, eq_e)
+
+                        if qchar == '"' or qchar == "'" then
+                            local _, val_e = inner:find(qchar .. "[^" .. qchar .. "]*" .. qchar, eq_e)
+
+                            if not val_e then ok = false break end
+
+                            local value = inner:sub(eq_e + 1, val_e - 1)
+                            local raw
+
+                            if qchar == "'" and not value:find('"', 1, true) then
+                                raw = name .. '="' .. value .. '"'
+                            else
+                                raw = inner:sub(name_s, val_e)
+                            end
+
+                            table.insert(attrs, { name = name, raw = raw })
+                            j = val_e + 1
+                        else
+                            local _, val_e = inner:find("^%S+", eq_e)
+
+                            if not val_e then ok = false break end
+
+                            table.insert(attrs, { name = name, raw = inner:sub(name_s, val_e) })
+                            j = val_e + 1
+                        end
+                    else
+                        table.insert(attrs, { name = name, raw = name })
+                        j = k
+                    end
+                end
+
+                if ok and #attrs > 0 then
+                    local closer = (self_closing and " />" or ">") .. trailing
+
+                    if #attrs >= 2 then
+                        table.sort(attrs, function(a, b)
+                            return a.name:lower() < b.name:lower()
+                        end)
+
+                        local step = indent .. "    "
+
+                        table.insert(out, indent .. "<" .. tag .. " " .. attrs[1].raw)
+
+                        for idx = 2, #attrs do
+                            table.insert(out, step .. attrs[idx].raw)
+                        end
+
+                        out[#out] = out[#out] .. closer
+                    else
+                        -- Only one attribute: nothing to sort or stack, but
+                        -- still rebuild the line so quote normalization above
+                        -- takes effect.
+                        table.insert(out, indent .. "<" .. tag .. " " .. attrs[1].raw .. closer)
+                    end
+
+                    reflowed = true
+                end
+            end
+        end
+
+        if not reflowed then
             table.insert(out, line)
         end
     end
@@ -464,7 +753,14 @@ local function allman_css_rewriter(lines)
         elseif t:match("^}") then
             level = math.max(level - 1, 0)
             table.insert(out, INDENT:rep(level) .. "}")
-            table.insert(out, "")
+
+            -- Only separate top-level rules with a blank line. Without the
+            -- level == 0 check this fires after EVERY closing brace,
+            -- including a nested rule's, inserting a spurious blank between
+            -- the nested rule and its own parent's closing brace.
+            if level == 0 then
+                table.insert(out, "")
+            end
         else
             table.insert(out, INDENT:rep(level) .. t)
         end
@@ -577,6 +873,13 @@ local function universal_post_processor(lines, lang)
     -- ── Pass 2: sort imports ──────────────────────────────────────────────────
     lines = sort_imports(lines, lang)
 
+    -- ── Pass 3a: sort HTML tag attributes ─────────────────────────────────────
+    -- Scoped to html only for now - JSX/Vue attribute syntax (expression
+    -- values in {}, camelCase event props) would need its own tokenizer.
+    if lang == "html" then
+        lines = sort_html_attributes(lines)
+    end
+
     -- ── Pass 3: sort HTML class attributes ───────────────────────────────────
     if lang == "html" or lang == "javascript" or lang == "typescript" then
         lines = sort_html_classes(lines)
@@ -629,11 +932,6 @@ local function universal_post_processor(lines, lang)
     local prev_was_decorator = false
     local same_kw_run        = 0
     local prev_keyword       = nil
-
-    -- code_since_opener: number of non-blank non-comment non-decorator lines
-    -- emitted since the last block opener. Used to suppress blank lines before
-    -- the first comment inside a function body even when guard clauses intervene.
-    local code_since_opener = 999   -- start high so file-top comments work
 
     -- Docstring delimiter constants built from char codes to avoid any
     -- confusion with Lua string quoting (these are the literal sequences
@@ -742,31 +1040,29 @@ local function universal_post_processor(lines, lang)
         --   -- Section      ← no blank inserted here
         --   -- ============
         --
-        -- When a comment block immediately precedes a top-level definition,
-        -- ensure two blank lines go BEFORE the comment (not between it and the
-        -- def) so the definition visually owns the spacing.
+        -- Never a blank line AFTER a comment (see the emit code below, which
+        -- suppresses the standard "blank before a def" rules whenever the
+        -- previous line was a comment) - a comment always hugs whatever it's
+        -- describing.
+        --
+        -- Before a comment, two cases:
+        --   - It's attached to a definition (the next real code line is a
+        --     top-level def or nested method): the comment gets that def's own
+        --     blank-line budget (2 or 1) instead of the def itself, so the
+        --     definition visually owns the spacing.
+        --   - Otherwise it's a standalone comment: preserve the author's own
+        --     choice, capped at one blank line - if they didn't leave a blank,
+        --     don't invent one; if they left one (or several), collapse to one.
         if is_comment(line) then
             if not prev_was_comment and bracket_depth == 0 then
                 local next_code = next_code_idx(lines, i + 1)
 
-                if i > 1 and not prev_was_blank then
-                    if next_code and is_top_level_def(lines[next_code], lang) then
-                        ensure_blanks(2)
-                    elseif code_since_opener >= 2 then
-                        -- Only add a blank before a comment when at least 2 code
-                        -- lines have appeared since the last block opener. This
-                        -- prevents blanks between a function header (or its guard
-                        -- clauses) and the first explanatory comment in the body.
-                        ensure_blanks(1)
-                    end
-                elseif i > 1 and prev_was_blank then
-                    -- There was already a blank before this comment in the input.
-                    -- Honour the top-level rule (2 blanks) or preserve the 1 blank.
-                    if next_code and is_top_level_def(lines[next_code], lang) then
-                        ensure_blanks(2)
-                    elseif code_since_opener >= 2 then
-                        ensure_blanks(1)
-                    end
+                if next_code and is_top_level_def(lines[next_code], lang) then
+                    ensure_blanks(2)
+                elseif next_code and is_method_def(lines[next_code], lang) then
+                    ensure_blanks(1)
+                elseif prev_was_blank then
+                    ensure_blanks(1)
                 end
             end
 
@@ -787,6 +1083,7 @@ local function universal_post_processor(lines, lang)
         -- what immediately preceded this line before the flags are cleared.
         local was_comment   = prev_was_comment
         local was_decorator = prev_was_decorator
+        local was_opener    = prev_was_opener
         prev_was_comment    = false
 
         -- prev_was_decorator is reset per-branch below, not here globally.
@@ -795,7 +1092,7 @@ local function universal_post_processor(lines, lang)
         -- We fire ensure_blanks HERE, before the decorator, then set a flag so
         -- the class/def line that follows does NOT add its own blanks.
         if trimmed(line):match("^@%w") then
-            if not was_decorator and bracket_depth == 0 and #out > 0 then
+            if not was_decorator and not was_opener and bracket_depth == 0 and #out > 0 then
                 local next_code = next_code_idx(lines, i + 1)
 
                 if next_code and is_top_level_def(lines[next_code], lang) then
@@ -818,8 +1115,10 @@ local function universal_post_processor(lines, lang)
         end
 
         -- ── Top-level definitions ─────────────────────────────────────────────
+        -- Never a blank line right after an opening brace: there's nothing
+        -- above it yet to separate from, no matter what follows.
         if is_top_level_def(line, lang) and bracket_depth == 0 then
-            if #out > 0 and not was_comment and not was_decorator then
+            if #out > 0 and not was_comment and not was_decorator and not was_opener then
                 ensure_blanks(2)
             end
 
@@ -830,15 +1129,16 @@ local function universal_post_processor(lines, lang)
             prev_keyword       = nil
 
             same_kw_run        = 0
-            code_since_opener  = 0
             bracket_depth      = math.max(0, bracket_depth + count_net_brackets(line))
 
             goto continue
         end
 
         -- ── Nested method / function definitions ──────────────────────────────
+        -- Same rule: never a blank line right after an opening brace, even
+        -- when the first thing inside the block is itself a method.
         if is_method_def(line, lang) and bracket_depth == 0 then
-            if #out > 0 and not was_comment and not was_decorator then
+            if #out > 0 and not was_comment and not was_decorator and not was_opener then
                 ensure_blanks(1)
             end
 
@@ -849,7 +1149,6 @@ local function universal_post_processor(lines, lang)
             prev_keyword       = nil
 
             same_kw_run        = 0
-            code_since_opener  = 0
             bracket_depth      = math.max(0, bracket_depth + count_net_brackets(line))
 
             goto continue
@@ -915,12 +1214,6 @@ local function universal_post_processor(lines, lang)
         prev_keyword       = this_keyword
 
         bracket_depth      = math.max(0, bracket_depth + count_net_brackets(line))
-
-        if prev_was_opener then
-            code_since_opener = 0
-        else
-            code_since_opener = code_since_opener + 1
-        end
 
         ::continue::
     end
@@ -1130,34 +1423,62 @@ end
 -- Formatter definitions
 -- =============================================================================
 -- ── C / C++ / Java ────────────────────────────────────────────────────────────
+-- clang-format does the low-level indentation and brace placement; the
+-- universal post-processor then applies the same project-wide rules used
+-- for every other language (dash replacement, #include/import sorting,
+-- blank-line spacing, etc.) so C, C++, and Java end up on equal footing
+-- with lua/js/ts/python/css/html instead of being clang-format's raw output.
 conform.formatters.clang_format_allman =
 {
-    command = "clang-format",
-    args =
-    {
-        "--style={BasedOnStyle: WebKit, BreakBeforeBraces: Allman, IndentWidth: 4}",
-        "--stdin-filepath", "$FILENAME",
-    },
-    stdin = true,
+    inherit = false,
+    format = function(_, ctx)
+        local bufnr = ctx.buf
+        if not bufnr then return {} end
+        local ft    = vim.bo[bufnr].filetype
+        local fname = ctx.filename or vim.api.nvim_buf_get_name(bufnr)
+        local lines = run_cmd_on_buf(bufnr,
+        {
+            "clang-format",
+            "--style={BasedOnStyle: WebKit, BreakBeforeBraces: Allman, IndentWidth: 4}",
+            "--assume-filename", fname,
+        })
+        return apply_to_buf(bufnr, universal_post_processor(lines, ft))
+    end,
 }
 conform.formatters.clang_format_standard =
 {
-    command = "clang-format",
-    args =
-    {
-        "--style={BasedOnStyle: WebKit, IndentWidth: 4}",
-        "--stdin-filepath", "$FILENAME",
-    },
-    stdin = true,
+    inherit = false,
+    format = function(_, ctx)
+        local bufnr = ctx.buf
+        if not bufnr then return {} end
+        local ft    = vim.bo[bufnr].filetype
+        local fname = ctx.filename or vim.api.nvim_buf_get_name(bufnr)
+        local lines = run_cmd_on_buf(bufnr,
+        {
+            "clang-format",
+            "--style={BasedOnStyle: WebKit, IndentWidth: 4}",
+            "--assume-filename", fname,
+        })
+        return apply_to_buf(bufnr, universal_post_processor(lines, ft))
+    end,
 }
 -- ── CSS ───────────────────────────────────────────────────────────────────────
+-- prettier does the real, from-scratch reindentation (robust to arbitrarily
+-- messy input); allman_css_rewriter then relocates the "{" onto its own line
+-- for the Allman variant only. Previously css_standard skipped both and left
+-- whatever indentation the file already had completely untouched.
 conform.formatters.css_allman =
 {
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
         if not bufnr then return {} end
-        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        local lines = run_cmd_on_buf(bufnr,
+        {
+            "prettier",
+            "--parser", "css",
+            "--tab-width", "4",
+        })
         lines = allman_css_rewriter(lines)
         return apply_to_buf(bufnr, universal_post_processor(lines, "css"))
     end,
@@ -1168,19 +1489,36 @@ conform.formatters.css_standard =
     format = function(_, ctx)
         local bufnr = ctx.buf
         if not bufnr then return {} end
-        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        local lines = run_cmd_on_buf(bufnr,
+        {
+            "prettier",
+            "--parser", "css",
+            "--tab-width", "4",
+        })
         return apply_to_buf(bufnr, universal_post_processor(lines, "css"))
     end,
 }
 -- ── JavaScript / TypeScript ───────────────────────────────────────────────────
+-- prettier does the real, from-scratch reindentation (and line-wrapping,
+-- quote/semicolon normalization, etc. - robust to arbitrarily messy input);
+-- js_allman_rewriter then relocates "{" onto its own line for the Allman
+-- variant only. Previously neither variant reindented anything - the brace
+-- rewriter only relocated braces using whatever indentation the input line
+-- already happened to have.
 conform.formatters.js_allman =
 {
     inherit = false,
     format = function(_, ctx)
-        local bufnr = ctx.buf
+        local bufnr  = ctx.buf
         if not bufnr then return {} end
-        local ft    = vim.bo[bufnr].filetype
-        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        local ft     = vim.bo[bufnr].filetype
+        local parser = (ft == "typescript") and "typescript" or "babel"
+        local lines  = run_cmd_on_buf(bufnr,
+        {
+            "prettier",
+            "--parser", parser,
+            "--tab-width", "4",
+        })
         lines = js_allman_rewriter(lines)
         return apply_to_buf(bufnr, universal_post_processor(lines, ft))
     end,
@@ -1189,21 +1527,42 @@ conform.formatters.js_standard =
 {
     inherit = false,
     format = function(_, ctx)
-        local bufnr = ctx.buf
+        local bufnr  = ctx.buf
         if not bufnr then return {} end
-        local ft    = vim.bo[bufnr].filetype
-        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        local ft     = vim.bo[bufnr].filetype
+        local parser = (ft == "typescript") and "typescript" or "babel"
+        local lines  = run_cmd_on_buf(bufnr,
+        {
+            "prettier",
+            "--parser", parser,
+            "--tab-width", "4",
+        })
         return apply_to_buf(bufnr, universal_post_processor(lines, ft))
     end,
 }
 -- ── Lua ───────────────────────────────────────────────────────────────────────
+-- stylua does the real, from-scratch reindentation (robust to arbitrarily
+-- messy input); lua_allman_rewriter then relocates table-literal "{" onto
+-- its own line for the Allman variant only (Lua's actual control-flow blocks
+-- use then/do/end, not braces - "{" only ever opens a table constructor).
+-- --syntax LuaJit: Neovim's built-in Lua runtime IS LuaJIT (not stock Lua),
+-- and stylua's default dialect can't parse a `goto`/`::label::` - it fails
+-- outright and silently falls back to the unformatted original on any file
+-- using one (this file included, until this flag was added).
 conform.formatters.lua_allman =
 {
     inherit = false,
     format = function(_, ctx)
         local bufnr = ctx.buf
         if not bufnr then return {} end
-        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        local lines = run_cmd_on_buf(bufnr,
+        {
+            "stylua",
+            "--syntax", "LuaJit",
+            "--indent-type", "Spaces",
+            "--indent-width", "4",
+            "-",
+        })
         lines = lua_allman_rewriter(lines)
         return apply_to_buf(bufnr, universal_post_processor(lines, "lua"))
     end,
@@ -1214,7 +1573,14 @@ conform.formatters.lua_standard =
     format = function(_, ctx)
         local bufnr = ctx.buf
         if not bufnr then return {} end
-        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        local lines = run_cmd_on_buf(bufnr,
+        {
+            "stylua",
+            "--syntax", "LuaJit",
+            "--indent-type", "Spaces",
+            "--indent-width", "4",
+            "-",
+        })
         return apply_to_buf(bufnr, universal_post_processor(lines, "lua"))
     end,
 }
@@ -1304,4 +1670,3 @@ vim.keymap.set("n", "<C-S-f>", function()
     end
     conform.format({ formatters = fmts, async = true })
 end, { noremap = true, silent = true, desc = "Format (standard / K&R)" })
-
