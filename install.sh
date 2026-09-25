@@ -592,7 +592,7 @@ install_eww() {
     info "Installing eww bar stack..."
 
     info "Installing eww (AUR)..."
-    yay_install eww wlogout
+    yay_install eww-git wlogout
 
     info "Installing pacman packages..."
     pacman_install \
