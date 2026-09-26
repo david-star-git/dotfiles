@@ -228,6 +228,8 @@ install_zsh() {
         chsh -s "$(which zsh)"
         ok "Default shell set to zsh (takes effect on next login)"
     fi
+    mkdir -p "$ORIGINAL_HOME/.config"
+    link "$SCRIPT_DIR/config/zsh" "$ORIGINAL_HOME/.config/zsh"
     ok "zsh done"
 }
 

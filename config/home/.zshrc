@@ -163,7 +163,7 @@ add-zsh-hook precmd setprompt
         rel="${script#${SCRIPT_DIR}/}"
         name="${script##*/}"
         name="${name%.sh}"
-        q=$(printf '%q' "$script")
+        q="${(q)script}"
 
         if [[ "$rel" == func/* || "$rel" == */func/* ]]; then
             source "$script"
@@ -192,8 +192,21 @@ setopt HIST_IGNORE_ALL_DUPS SHARE_HISTORY HIST_VERIFY
     ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
 }
 
-[[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && \
-    source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# zsh-syntax-highlighting's `_zsh_highlight_load_highlighters` was the single
+# biggest remaining chunk of startup in the zprof trace (~25ms). Highlighting
+# doesn't need to be ready before the prompt appears, so load it via
+# zsh-defer, which waits until zle is idle — i.e. right after the first
+# prompt is drawn and the shell is sitting waiting for input.
+# Source: https://github.com/romkatv/zsh-defer (MIT license)
+[[ -f ~/.config/zsh/zsh-defer.plugin.zsh ]] && source ~/.config/zsh/zsh-defer.plugin.zsh
+
+if [[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]]; then
+    if (( ${+functions[zsh-defer]} )); then
+        zsh-defer source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+    else
+        source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+    fi
+fi
 
 # command-not-found suggestions
 [[ -f /usr/share/doc/pkgfile/command-not-found.zsh ]] \
