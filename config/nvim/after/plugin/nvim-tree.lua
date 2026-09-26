@@ -67,7 +67,12 @@ require("nvim-tree").setup(
 })
 
 -- Toggle the explorer
-vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { noremap = true, silent = true })
+vim.keymap.set(
+    "n",
+    "<leader>e",
+    ":NvimTreeToggle<CR>",
+    { noremap = true, silent = true, desc = "Toggle file explorer" }
+)
 
 -- Hide the vertical split divider line between nvim-tree and the editor
 vim.api.nvim_set_hl(0, "VertSplit", { fg = "NONE", bg = "NONE" })

@@ -32,6 +32,7 @@ require("nvim-treesitter").setup(
         "markdown",
         "markdown_inline",
         "vue",
+        "sql", -- vim-dadbod query buffers
     },
     sync_install = false, -- install grammars asynchronously
     auto_install = true, -- install missing grammars on first open

@@ -11,12 +11,12 @@
 -- <leader>g - open the file where the last test was defined
 -- =============================================================================
 
-vim.keymap.set("n", "<leader>t", ":TestNearest<CR>", { silent = true })
-vim.keymap.set("n", "<leader>T", ":TestFile<CR>", { silent = true })
-vim.keymap.set("n", "<leader>a", ":TestSuite<CR>", { silent = true })
-vim.keymap.set("n", "<leader>l", ":TestLast<CR>", { silent = true })
-vim.keymap.set("n", "<leader>g", ":TestVisit<CR>", { silent = true })
-
+vim.keymap.set("n", "<leader>t", ":TestNearest<CR>", { silent = true, desc = "Test nearest" })
+vim.keymap.set("n", "<leader>T", ":TestFile<CR>", { silent = true, desc = "Test file" })
+vim.keymap.set("n", "<leader>a", ":TestSuite<CR>", { silent = true, desc = "Test suite" })
+vim.keymap.set("n", "<leader>l", ":TestLast<CR>", { silent = true, desc = "Test last" })
+-- vim.keymap.set("n", "<leader>g", ":TestVisit<CR>", { silent = true, desc = "Test visit (last test file)" })
+--
 -- Use vimux to send test output to a tmux pane instead of a new nvim buffer.
 -- This keeps the editor clean and lets you scroll test output freely.
 vim.cmd("let test#strategy = 'vimux'")

@@ -49,10 +49,12 @@ require("noice").setup(
     -- ── LSP integration ───────────────────────────────────────────────────────
     lsp =
     {
-        -- Show LSP progress (indexing, formatting) as a small corner notification.
+        -- LSP progress (indexing, formatting) is now shown by fidget.nvim
+        -- instead (see after/plugin/fidget.lua) - leaving this on would show
+        -- every progress message twice, once from each plugin.
         progress =
         {
-            enabled = true,
+            enabled = false,
             format = "lsp_progress",
             format_done = "lsp_progress_done",
             throttle = 1000 / 30, -- update at 30fps max

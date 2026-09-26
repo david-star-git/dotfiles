@@ -68,14 +68,23 @@ require("mason-tool-installer").setup(
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
 -- Shared on_attach - LSP keymaps that activate only when a server is running.
+--
+-- K, <leader>d, <leader>rn, and <leader>ca are routed through lspsaga.nvim's
+-- floating-window UI instead of the plain vim.lsp.buf.* calls - same actions,
+-- nicer presentation. See after/plugin/lspsaga.lua for the rest of its
+-- keymaps (gh, gd, gl, [e/]e, <leader>o), which don't need an attached
+-- client to be defined.
 local on_attach = function(client, bufnr)
-    local map = function(lhs, rhs)
-        vim.keymap.set("n", lhs, rhs, { buffer = bufnr, silent = true })
+    local map = function(lhs, rhs, desc)
+        vim.keymap.set("n", lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
     end
-    map("<leader>d", vim.lsp.buf.definition)
-    map("K", vim.lsp.buf.hover)
-    map("<leader>rn", vim.lsp.buf.rename)
-    map("<leader>ca", vim.lsp.buf.code_action)
+    local saga = function(lhs, cmd, desc)
+        map(lhs, "<cmd>Lspsaga " .. cmd .. "<CR>", desc)
+    end
+    saga("<leader>d", "goto_definition", "Go to definition (Lspsaga)")
+    saga("K", "hover_doc", "Hover doc (Lspsaga)")
+    saga("<leader>rn", "rename", "Rename (Lspsaga)")
+    saga("<leader>ca", "code_action", "Code action (Lspsaga)")
 
     -- Parameter hints in a small floating window while typing a call's
     -- arguments - which function you're in, which parameter you're on.
