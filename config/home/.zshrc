@@ -32,7 +32,15 @@ alias vim='nvim'
 
 alias dl='noglob dl'
 
-source ~/.scripts/tools/usb
+# Lazy-load: ~/.scripts/tools/usb is expected to define a `usb` function
+# (matching the autoloader convention below). Sourcing it eagerly cost a
+# disk read + parse on every shell start for a command most sessions
+# never call.
+usb() {
+    unfunction usb
+    source ~/.scripts/tools/usb
+    usb "$@"
+}
 
 # Prefer ripgrep over grep when available
 if command -v rg &>/dev/null; then
@@ -124,20 +132,31 @@ add-zsh-hook precmd setprompt
 # ─────────────────────────────────────────────────────────────────────────────
 
 () {
-    local SCRIPT_DIR
+    local SCRIPT_DIR CACHE_FILE
     SCRIPT_DIR="$(realpath "$HOME/.scripts")"
+    CACHE_FILE="$HOME/.cache/zsh-scripts-manifest"
     local script rel name q
     local -a scripts
 
     [[ -d "$SCRIPT_DIR" ]] || return 0
+    mkdir -p "${CACHE_FILE:h}"
+
+    # The full recursive `find` + `sort` used to run on every single shell
+    # start. Cache its output and only re-scan when the top-level directory
+    # itself changed (a file was added/removed directly inside it) or the
+    # cache doesn't exist yet. Changes *inside* subdirectories won't trigger
+    # an automatic rebuild — run `scripts-rehash` after those.
+    if [[ ! -s "$CACHE_FILE" || "$SCRIPT_DIR" -nt "$CACHE_FILE" ]]; then
+        find -L "$SCRIPT_DIR" \
+            -mindepth 1 \
+            -type d \( -name '.*' -o -name 'node_modules' \) -prune \
+            -o -type f \( -name '*.sh' -o \! -name '*.*' \) -print \
+            | sort > "$CACHE_FILE"
+    fi
 
     # Collect into array first - avoids zsh process-substitution timing
     # issues that cause the while loop to see no input when sourced.
-    scripts=("${(@f)$(find -L "$SCRIPT_DIR" \
-        -mindepth 1 \
-        -type d \( -name '.*' -o -name 'node_modules' \) -prune \
-        -o -type f \( -name '*.sh' -o \! -name '*.*' \) -print \
-        | sort)}")
+    scripts=("${(@f)$(<$CACHE_FILE)}")
 
     for script in "${scripts[@]}"; do
         [[ -f "$script" ]] || continue
@@ -156,6 +175,10 @@ add-zsh-hook precmd setprompt
     done
     return 0
 }
+
+# Force-rebuild the manifest above — run after adding/removing a script
+# nested inside a subdirectory of ~/.scripts.
+alias scripts-rehash='rm -f "$HOME/.cache/zsh-scripts-manifest" && exec zsh'
 
 # ── History ───────────────────────────────────────────────────────────────────
 HISTFILE=~/.zsh_history
@@ -180,10 +203,28 @@ setopt HIST_IGNORE_ALL_DUPS SHARE_HISTORY HIST_VERIFY
 
 # ── Path ──────────────────────────────────────────────────────────────────────
 export PATH="$HOME/.pyenv/bin:$PATH"
-eval "$(pyenv init -)"
 
+# `pyenv init -` forks several subshells and rehashes every installed Python
+# version's shims — on every single shell start, even for sessions that never
+# touch Python. Defer it until pyenv/python/pip is actually invoked: the first
+# call pays the setup cost once, every call after (in that shell) is normal.
+_lazy_load_pyenv() {
+    for cmd in pyenv python python3 pip pip3; do
+        unfunction "$cmd" 2>/dev/null
+    done
+    eval "$(command pyenv init -)"
+}
+for cmd in pyenv python python3 pip pip3; do
+    eval "${cmd}() { _lazy_load_pyenv; ${cmd} \"\$@\"; }"
+done
+
+# ── SSH agent (via gpg-agent) ─────────────────────────────────────────────────
+# Skip the `--launch` fork (and the probing it does) once gpg-agent is already
+# running, which is true for every shell after the first one each session.
+if ! pgrep -x gpg-agent >/dev/null; then
+    gpgconf --launch gpg-agent
+fi
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-gpgconf --launch gpg-agent
 
 export TERMINAL=kitty
 export DL_DIR="$HOME/Videos"
