@@ -77,3 +77,12 @@ vim.keymap.set(
 -- Hide the vertical split divider line between nvim-tree and the editor
 vim.api.nvim_set_hl(0, "VertSplit", { fg = "NONE", bg = "NONE" })
 
+require("nvim-tree").setup(
+{
+    hijack_netrw = false,
+    hijack_directories =
+    {
+        enable = false,
+    },
+})
+

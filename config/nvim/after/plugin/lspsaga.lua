@@ -33,39 +33,39 @@ require("lspsaga").setup(
     },
 })
 
-vim.api.nvim_set_hl(0, "SagaNormal",
-{
-    bg = "#1e1e2e",
-})
-
-vim.api.nvim_set_hl(0, "SagaBorder",
-{
-    fg = "#585b70",
-    bg = "#1e1e2e",
-})
-
-vim.api.nvim_set_hl(0, "NormalFloat",
-{
-    bg = "#1e1e2e",
-})
-
-vim.api.nvim_set_hl(0, "FloatBorder",
-{
-    fg = "#585b70",
-    bg = "#1e1e2e",
-})
-
-vim.opt.updatetime = 1000
-
-vim.api.nvim_create_autocmd("CursorHold",
-{
-    callback = function()
-        if next(vim.lsp.get_clients({ bufnr = 0 })) then
-            vim.lsp.buf.hover({ focus = false })
-        end
-    end,
-})
-
+-- vim.api.nvim_set_hl(0, "SagaNormal",
+-- {
+--     bg = "#1e1e2e",
+-- })
+--
+-- vim.api.nvim_set_hl(0, "SagaBorder",
+-- {
+--     fg = "#585b70",
+--     bg = "#1e1e2e",
+-- })
+--
+-- vim.api.nvim_set_hl(0, "NormalFloat",
+-- {
+--     bg = "#1e1e2e",
+-- })
+--
+-- vim.api.nvim_set_hl(0, "FloatBorder",
+-- {
+--     fg = "#585b70",
+--     bg = "#1e1e2e",
+-- })
+--
+-- vim.opt.updatetime = 1000
+--
+-- vim.api.nvim_create_autocmd("CursorHold",
+-- {
+--     callback = function()
+--         if next(vim.lsp.get_clients({ bufnr = 0 })) then
+--             vim.lsp.buf.hover({ focus = false })
+--         end
+--     end,
+-- })
+--
 local map = function(lhs, cmd, desc)
     vim.keymap.set("n", lhs, "<cmd>Lspsaga " .. cmd .. "<CR>", { silent = true, desc = desc })
 end

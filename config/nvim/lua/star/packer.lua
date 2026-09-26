@@ -20,6 +20,10 @@ return require("packer").startup(function(use)
         "nvim-telescope/telescope.nvim",
         requires = { { "nvim-lua/plenary.nvim" } },
     })
+    --  ── Startup dashboard ─────────────────────────────────────────────────────
+    -- Alpha: project/startup dashboard, shown when Neovim is launched with
+    -- a directory such as `nvim .`.
+    use("goolord/alpha-nvim")
     -- ── Colorscheme ───────────────────────────────────────────────────────────
     -- Catppuccin Mocha - matches the terminal, tmux, GTK, and neomutt theme.
     use({ "catppuccin/nvim", as = "catppuccin" })
