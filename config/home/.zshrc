@@ -26,7 +26,12 @@ export LESS_TERMCAP_us=$'\E[01;32m'
 
 # ── Aliases ───────────────────────────────────────────────────────────────────
 export GTK_THEME=WhiteSur-Dark-green
-alias ls='exa -l'
+
+alias ls='exa -l --icons=always --group-directories-last'
+alias tree='exa --tree --icons'
+
+alias cat='bat'
+
 alias nano='nvim'
 alias vim='nvim'
 
@@ -44,7 +49,7 @@ usb() {
 
 # Prefer ripgrep over grep when available
 if command -v rg &>/dev/null; then
-    alias grep='rg'
+    alias grep='rg --color=auto'
 else
     alias grep="/usr/bin/grep --color=auto"
 fi
