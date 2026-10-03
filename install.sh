@@ -223,6 +223,7 @@ install_zsh() {
     info "Installing zsh..."
     pacman_install zsh zsh-syntax-highlighting zsh-autosuggestions \
         zsh-completions zsh-history-substring-search yt-dlp ffmpeg
+    zsh_install zsh-command-not-found-git
     link_home_files
     if [ "$SHELL" != "$(which zsh)" ]; then
         chsh -s "$(which zsh)"
