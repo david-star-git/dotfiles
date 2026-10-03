@@ -8,9 +8,9 @@
 local alpha = require("alpha")
 local dashboard = require("alpha.themes.dashboard")
 
-local bonsai_path = vim.fn.stdpath("config") .. "/bonsai.txt"
+local img_path = vim.fn.stdpath("config") .. "/black-hole.txt"
 
-dashboard.section.header.val = vim.fn.readfile(bonsai_path)
+dashboard.section.header.val = vim.fn.readfile(img_path)
 
 
 dashboard.section.buttons.val =

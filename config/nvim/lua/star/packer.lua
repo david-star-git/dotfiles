@@ -234,5 +234,11 @@ return require("packer").startup(function(use)
     -- which-key.nvim: shows a popup of available keybindings when a prefix
     -- key (like <leader>) is held down.
     use("folke/which-key.nvim")
+    -- smartcolumn.nvim: colorcolumn that only shows when a line exceeds the
+    -- limit. 100 by default, 120 for java. See after/plugin/smartcolumn.lua.
+    use("m4xshen/smartcolumn.nvim")
+    -- auto-session: saves and restores the session per directory (buffers,
+    -- cursor line/col, splits, folds, nvim-tree). See after/plugin/auto-session.lua.
+    use("rmagatti/auto-session")
 end)
 

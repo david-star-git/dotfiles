@@ -9,9 +9,6 @@
 -- =============================================================================
 -- Disable netrw before nvim-tree loads - if netrw loads first it conflicts.
 
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
-
 -- File type icons
 require("nvim-web-devicons").setup({ default = true })
 
@@ -24,24 +21,24 @@ require("nvim-tree").setup(
     update_cwd = true,
     view =
     {
-        width = 30,
-        side = "left",
+        width = 60,
+        side = "right",
         -- Open as a centered floating window instead of a side panel
-        float =
-        {
-            enable = true,
-            quit_on_focus_loss = true, -- close if you click outside
-            open_win_config =
-            {
-                relative = "editor",
-                border = "rounded",
-                width = 80,
-                height = 40,
-                -- Center vertically and horizontally
-                row = math.floor((vim.o.lines - 40) / 2),
-                col = math.floor((vim.o.columns - 80) / 2),
-            },
-        },
+        --        float =
+        --        {
+        --            enable = true,
+        --            quit_on_focus_loss = true, -- close if you click outside
+        --            open_win_config =
+        --            {
+        --                relative = "editor",
+        --                border = "rounded",
+        --                width = 80,
+        --                height = 40,
+        --                -- Center vertically and horizontally
+        --                row = math.floor((vim.o.lines - 40) / 2),
+        --                col = math.floor((vim.o.columns - 80) / 2),
+        --            },
+        --        },
     },
     renderer =
     {
@@ -64,6 +61,11 @@ require("nvim-tree").setup(
             quit_on_open = false, -- keep explorer open when opening files
         },
     },
+    hijack_netrw = false,
+    hijack_directories =
+    {
+        enable = false,
+    },
 })
 
 -- Toggle the explorer
@@ -76,13 +78,4 @@ vim.keymap.set(
 
 -- Hide the vertical split divider line between nvim-tree and the editor
 vim.api.nvim_set_hl(0, "VertSplit", { fg = "NONE", bg = "NONE" })
-
-require("nvim-tree").setup(
-{
-    hijack_netrw = false,
-    hijack_directories =
-    {
-        enable = false,
-    },
-})
 

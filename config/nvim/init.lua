@@ -4,5 +4,8 @@
 -- Keeping this file minimal means the real config is organised in one place.
 -- =============================================================================
 
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 require("star")
 
