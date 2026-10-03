@@ -17,7 +17,7 @@ require("smartcolumn").setup(
     scope = "file",
     custom_colorcolumn =
     {
-        java = "120",
+        java = "150",
     },
     disabled_filetypes = { "help", "text", "markdown", "alpha", "NvimTree", "lazy", "mason" },
 })
