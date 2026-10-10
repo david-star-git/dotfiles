@@ -26,6 +26,6 @@ require("auto-session").setup(
     -- nvim-tree buffers do not restore cleanly, so close before saving
     -- and reopen after restoring, then jump back to the editor window.
     pre_save_cmds = { "NvimTreeClose" },
-    post_restore_cmds = { "NvimTreeOpen", "wincmd p" },
+    post_restore_cmds = { "NvimTreeClose", "wincmd p" },
 })
 
