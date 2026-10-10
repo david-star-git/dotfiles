@@ -9,6 +9,7 @@
 --
 -- Keymaps:
 --     <leader>rr  run
+--     <leader>rb  build
 --     <leader>rd  dev
 --     <leader>rt  test
 --
@@ -115,6 +116,7 @@ end
 ---Supported syntax:
 ---
 ---    run = command
+---    build = command
 ---    dev = command
 ---    test = command
 ---
@@ -297,6 +299,15 @@ end,
     desc = "Run project",
 })
 
+-- <leader>rr - run
+vim.keymap.set("n", "<leader>rb", function()
+    run("build")
+end,
+{
+    silent = true,
+    desc = "Build project",
+})
+
 -- <leader>rd - dev
 vim.keymap.set("n", "<leader>rd", function()
     run("dev")
@@ -330,10 +341,12 @@ vim.keymap.set("n", "<leader>rc", function()
         "#",
         "# Available keymaps:",
         "#   <leader>rr  -> run",
+        "#   <leader>rb  -> build",
         "#   <leader>rd  -> dev",
         "#   <leader>rt  -> test",
         "",
         "run =",
+        "build =",
         "dev =",
         "test =",
         "",
